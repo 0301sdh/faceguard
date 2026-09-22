@@ -5,4 +5,4 @@ __pycache__/
 *.pt
 *.pth
 FaceGuard_Project_Context.md
-docs/papers/fawkes-universal.pdf
+faceguard/docs/papers/fawkes-universal.pdf
