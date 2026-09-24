@@ -13,7 +13,7 @@ from torchvision import datasets, transforms
 from train_mnist import SimpleCNN
 
 
-def fgsm_attack(model, image, label, epsilon):
+def fgsm_attack(model, image, label, epsilon, use_random = False):
     # 입력 이미지에 대한 gradient를 구하기 위해 필요
     image = image.clone().detach().requires_grad_(True)
 
@@ -23,7 +23,10 @@ def fgsm_attack(model, image, label, epsilon):
     model.zero_grad()
     loss.backward()  # image.grad 에 "픽셀을 바꾸면 loss가 얼마나 변하는지"가 저장됨
 
-    perturbation = epsilon * image.grad.sign()
+    if use_random:
+        perturbation = epsilon * torch.randn_like(image).sign()
+    else:
+        perturbation = epsilon * image.grad.sign()
     adv_image = image + perturbation
 
     # 픽셀 값은 0~1 범위여야 하므로 벗어난 값은 잘라냄
