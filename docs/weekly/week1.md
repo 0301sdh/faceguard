@@ -21,5 +21,3 @@ AI 프로젝트를 시작하기 위한 최소한의 개념(Tensor, Gradient, Fac
 같은 사람 쌍의 유사도가 다른 사람 쌍보다 약 2배 높게 나와, FaceNet 임베딩이 신원을 명확히 구분한다는 것을 확인했다. 이 값(0.743)이 앞으로 adversarial perturbation을 적용해 낮춰야 할 baseline이 된다.
 
 
-## 다음 주 계획 (Week 2)
-FGSM(Fast Gradient Sign Method) 원리 이해 및 구현 — gradient를 이용해 입력 이미지에 작은 perturbation을 추가하는 방법 학습
