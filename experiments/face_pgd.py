@@ -109,6 +109,30 @@ def main():
 
     print_transfer(face_a1, face_a2, face_b1, results)
     save_visualization(face_a1, results)
+    compare_steps(face_a1, face_a2)
+
+
+def compare_steps(face_a1, face_a2):
+    # 얼굴에서도 MNIST처럼 10~20 steps가 적당한지, steps가 전이성에 영향을 주는지 확인
+    with torch.no_grad():
+        vgg_a2 = embed(face_a2)
+        casia_a2 = embed(face_a2, resnet_casia)
+
+    print("\n=== 얼굴에서 steps 비교 (scaled alpha, steps=1은 FGSM과 같음) ===")
+    print("성공 기준: vggface2 < 0.372, casia < 0.397")
+    print(f"{'eps':<8}{'steps':<7}{'vgg_vs_a2':<11}{'casia_vs_a2':<13}{'PSNR':<8}{'time(s)'}")
+
+    for epsilon in [4 / 255, 8 / 255]:
+        for steps in [1, 5, 10, 20, 40]:
+            start = time.time()
+            protected = pgd_identity(face_a1, epsilon, steps)
+            sec = time.time() - start
+
+            with torch.no_grad():
+                vgg_score = cos(embed(protected), vgg_a2)
+                casia_score = cos(embed(protected, resnet_casia), casia_a2)
+            print(f"{f'{epsilon * 255:.0f}/255':<8}{steps:<7}{vgg_score:<11.3f}"
+                  f"{casia_score:<13.3f}{psnr(protected, face_a1):<8.1f}{sec:.1f}")
 
 
 def print_transfer(face_a1, face_a2, face_b1, results):
