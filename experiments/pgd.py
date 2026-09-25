@@ -69,17 +69,8 @@ def evaluate(model, loader, attack_fn, num_batches):
     }
 
 
-def main():
-    model = SimpleCNN()
-    model.load_state_dict(torch.load("experiments/mnist_cnn.pt"))
-    model.eval()
-
-    test_dataset = datasets.MNIST(
-        root="data", train=False, download=True, transform=transforms.ToTensor()
-    )
-    loader = DataLoader(test_dataset, batch_size=100, shuffle=False)
-    num_batches = 20  # 2000장
-
+def compare_fgsm_pgd(model, loader, num_batches):
+    print("=== FGSM vs PGD (epsilon별) ===")
     steps = 10
     print(f"{'eps':<6}{'method':<8}{'steps':<7}{'acc(%)':<9}{'L2':<8}{'Linf':<8}{'time(s)'}")
 
@@ -94,6 +85,45 @@ def main():
             r = evaluate(model, loader, attack_fn, num_batches)
             print(f"{epsilon:<6}{name:<8}{n_iter:<7}{r['acc'] * 100:<9.1f}"
                   f"{r['l2']:<8.2f}{r['linf']:<8.3f}{r['sec']:.1f}")
+
+
+def compare_steps(model, loader, num_batches, epsilon=0.15):
+    print(f"\n=== 반복 횟수(steps)별 PGD (epsilon={epsilon}) ===")
+
+    r = evaluate(model, loader, lambda x, y: fgsm_attack(model, x, y, epsilon), num_batches)
+    print(f"FGSM 기준: acc {r['acc'] * 100:.1f}%, L2 {r['l2']:.2f}, time {r['sec']:.1f}s\n")
+
+    alpha_rules = [
+        ("fixed", lambda steps: epsilon / 4),          # 보폭 고정
+        ("scaled", lambda steps: 2.5 * epsilon / steps),  # 총 이동 거리 고정
+    ]
+
+    print(f"{'alpha':<8}{'steps':<7}{'alpha_val':<10}{'acc(%)':<9}{'L2':<8}{'time(s)'}")
+    for rule_name, alpha_fn in alpha_rules:
+        for steps in [1, 5, 10, 20, 40]:
+            alpha = alpha_fn(steps)
+            r = evaluate(
+                model, loader,
+                lambda x, y: pgd_attack(model, x, y, epsilon, alpha, steps),
+                num_batches,
+            )
+            print(f"{rule_name:<8}{steps:<7}{alpha:<10.4f}{r['acc'] * 100:<9.1f}"
+                  f"{r['l2']:<8.2f}{r['sec']:.1f}")
+
+
+def main():
+    model = SimpleCNN()
+    model.load_state_dict(torch.load("experiments/mnist_cnn.pt"))
+    model.eval()
+
+    test_dataset = datasets.MNIST(
+        root="data", train=False, download=True, transform=transforms.ToTensor()
+    )
+    loader = DataLoader(test_dataset, batch_size=100, shuffle=False)
+    num_batches = 20  # 2000장
+
+    compare_fgsm_pgd(model, loader, num_batches)
+    compare_steps(model, loader, num_batches)
 
 
 if __name__ == "__main__":
