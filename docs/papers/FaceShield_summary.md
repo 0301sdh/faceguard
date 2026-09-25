@@ -1,8 +1,5 @@
 # [논문 리뷰] FaceShield: 딥페이크 위협으로부터 얼굴 이미지를 보호하는 선제적 방어
 
-> 원문(arXiv 2412.09921v3 PDF, 본문 + 부록)을 직접 읽고 갱신한 버전이다.
-> 이전 버전은 요약 도구 기반이라 일부 수치와 설명이 부정확했다(아래 8번 참고).
-
 ## 1. 논문 정보
 - **저자:** Jaehwan Jeong, Sumin In, Sieun Kim, Hannie Shin, Jongheon Jeong, Sang Ho Yoon, Jaewook Chung, Sangpil Kim
 - **소속:** Korea University, KAIST, Samsung Research
@@ -57,7 +54,7 @@ L_id(δ; x) = cos( A(x+δ), A(x) ) − 1      # 논문 식 (11), A: ArcFace
 L_total = λ_proj·L_proj + λ_attn·L_attn + λ_mtcnn·L_mtcnn + λ_id·L_id
 ```
 - 각 λ는 grid search로 정한 하이퍼파라미터다. 본문에는 "λ_proj, λ_id는 음수, λ_attn, λ_mtcnn은 양수"라고 적혀 있다.
-- ⚠️ **부호 주의:** 알고리즘 1은 `x_adv ← x_adv − α·sign(∇L_total)`, 즉 L_total을 **줄이는** 방향으로 업데이트한다.
+-  **부호 주의:** 알고리즘 1은 `x_adv ← x_adv − α·sign(∇L_total)`, 즉 L_total을 **줄이는** 방향으로 업데이트한다.
   - λ_proj < 0이면 L_proj가 커진다. 의도대로 동작한다.
   - 하지만 λ_id < 0과 식 (11)을 그대로 조합하면 cos가 **커지는** 방향이 된다. 논문 표기가 서로 맞지 않는 것으로 보인다.
   - 따라서 부호를 그대로 옮기지 않는다. **구현 후 반복마다 cos 유사도가 실제로 내려가는지 출력해서 확인한다.**
