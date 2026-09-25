@@ -7,3 +7,4 @@ __pycache__/
 *.pth
 FaceGuard_Project_Context.md
 .idea/
+experiments/face_pgd_visualization.png
