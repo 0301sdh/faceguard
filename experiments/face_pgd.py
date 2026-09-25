@@ -17,7 +17,9 @@ from PIL import Image
 
 # post_process=False: 정규화하지 않은 0~255 값으로 얼굴을 받는다 (공격은 0~1 범위에서 하기 위해)
 mtcnn = MTCNN(image_size=160, margin=0, post_process=False)
-resnet = InceptionResnetV1(pretrained="vggface2").eval()
+resnet = InceptionResnetV1(pretrained="vggface2").eval()  # 공격(노이즈 생성)에 사용
+# 같은 구조, 다른 데이터로 학습한 모델. 노이즈 생성에는 쓰지 않고 평가에만 사용 (전이성 확인)
+resnet_casia = InceptionResnetV1(pretrained="casia-webface").eval()
 
 
 def load_face(path):
@@ -27,9 +29,9 @@ def load_face(path):
     return (face / 255).unsqueeze(0)  # (1, 3, 160, 160), 0~1
 
 
-def embed(face):
+def embed(face, model=resnet):
     # FaceNet이 학습할 때 쓴 정규화: (픽셀 - 127.5) / 128
-    return resnet((face * 255 - 127.5) / 128)
+    return model((face * 255 - 127.5) / 128)
 
 
 def cos(a, b):
@@ -105,7 +107,30 @@ def main():
               f"{psnr(protected, face_a1):<8.1f}{sec:.1f}")
         results.append((epsilon, protected))
 
+    print_transfer(face_a1, face_a2, face_b1, results)
     save_visualization(face_a1, results)
+
+
+def print_transfer(face_a1, face_a2, face_b1, results):
+    # vggface2로 만든 보호 사진을, 공격에 쓰지 않은 casia-webface로 평가
+    with torch.no_grad():
+        vgg_a2 = embed(face_a2)
+        casia_a1, casia_a2, casia_b1 = (embed(f, resnet_casia) for f in (face_a1, face_a2, face_b1))
+
+    casia_threshold = cos(casia_a1, casia_b1)
+    print("\n=== 전이성: casia-webface로 평가 (노이즈는 vggface2로 생성) ===")
+    print(f"casia 기준값: a1 vs a2 (본인) {cos(casia_a1, casia_a2):.3f}, "
+          f"a1 vs b1 (타인) {casia_threshold:.3f}  ← casia에서는 이 값 아래면 성공")
+    print(f"{'eps':<8}{'vgg_vs_a2':<11}{'casia_vs_a2':<13}{'casia_png_vs_a2':<17}{'casia 성공'}")
+
+    for epsilon, protected in results:
+        with torch.no_grad():
+            vgg_score = cos(embed(protected), vgg_a2)
+            casia_score = cos(embed(protected, resnet_casia), casia_a2)
+            casia_png = cos(embed(png_roundtrip(protected), resnet_casia), casia_a2)
+        ok = "O" if casia_score < casia_threshold else "X"
+        print(f"{f'{epsilon * 255:.0f}/255':<8}{vgg_score:<11.3f}{casia_score:<13.3f}"
+              f"{casia_png:<17.3f}{ok}")
 
 
 def save_visualization(face, results):
