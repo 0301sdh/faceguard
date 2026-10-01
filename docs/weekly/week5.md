@@ -1,6 +1,6 @@
 # Week 5 — Face swap 환경 준비, ArcFace Identity loss, Pilot 실험
 
-> 진행 중 문서. 현재까지: SimSwap 실행 환경 구성 + 데모 실행 완료.
+> 진행 중 문서. 현재까지: SimSwap 실행 환경 구성, 데모 실행, 내 사진 baseline (ArcFace 기준) 완료.
 
 ## 목표
 실제로 막으려는 딥페이크(face swap)를 직접 돌려보고, ArcFace를 공격한 보호 사진이 face swap 결과를 방해하는지 작은 실험으로 먼저 확인한다.
@@ -9,9 +9,9 @@
 - [x] Face swap과 ArcFace 개념 정리
 - [x] SimSwap 실행 환경 구성 (Google Colab, T4 GPU)
 - [x] SimSwap 데모(영상 face swap) 실행 및 결과 확인
-- [ ] 사진 한 장 face swap으로 바꾸기
-- [ ] 내 원본 사진을 source로 face swap 실행 (baseline)
-- [ ] 결과물과 내 얼굴의 유사도 측정 (ArcFace, FaceNet)
+- [x] 사진 한 장 face swap으로 바꾸기
+- [x] 내 원본 사진을 source로 face swap 실행 (baseline)
+- [ ] 결과물과 내 얼굴의 유사도 측정 (ArcFace 완료, FaceNet 남음)
 - [ ] `pgd_identity`를 ArcFace로 바꿔 보호 사진 생성 (pilot)
 - [ ] 보호 사진을 source로 face swap 실행 후 비교, Go/No-go 판단
 
@@ -62,7 +62,7 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
 
 
 - 경고(`SyntaxWarning`, `UserWarning`)는 실행을 멈추지 않으므로 무시했다. 오류는 `Traceback` + `...Error`로 멈춘다.
-- 3번은 Week 5 공격 코드에서 ArcFace를 불러올 때도 똑같이 필요하다.
+- ArcFace 가중치를 불러올 때 필요했던 `weights_only=False`는 Week 5 공격 코드에서 ArcFace를 불러올 때도 똑같이 필요하다.
 
 ## 결과
 
@@ -73,10 +73,26 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
   - 얼굴 검출(onnxruntime)은 CPU, 합성(PyTorch)은 GPU에서 실행됨
 - 결과 영상은 실제 인물이 나오므로 `data/week5/`에만 저장 (git 제외)
 
-### Baseline (예정)
-| source | target | 결과 vs 내 원본 (ArcFace) | 결과 vs 내 원본 (FaceNet) |
+### Baseline: 내 원본 사진으로 face swap (사진 한 장)
+- 방법: SimSwap의 `test_wholeimage_swapsingle.py`를 노트북 셀로 옮겨 실행 (`notebooks/simswap_eval.ipynb`)
+- target: `demo_file/specific1.png` (한 사람이 정면으로 나온 데모 사진)
+- 유사도: 세 장을 SimSwap과 같은 방식(정렬 → 정규화 → 112×112 → SimSwap 내부 ArcFace)으로 임베딩한 뒤 코사인 유사도 계산
+
+**ArcFace (SimSwap 내부 모델) 기준**
+| source | 결과 vs 내 사진 | 결과 vs target | 내 사진 vs target (타인 기준) |
 |---|---|---|---|
-| 내 원본 사진 | | | |
+| 사진 1 (`person_a_1`) | **0.732** | 0.202 | 0.062 |
+| 사진 3 | **0.688** | 0.371 | 0.069 |
+
+
+**눈으로 본 결과**
+- 여러 사진 모두 target의 얼굴은 바뀌었지만 **내 얼굴처럼 보이지 않았다.**
+- target의 머리 모양, 얼굴 윤곽, 피부색이 그대로 남아 "target 사람이 조금 바뀐 얼굴"로 보였다.
+
+**FaceNet 기준 (예정)**
+| source | 결과 vs 내 사진 1 | 결과 vs 내 사진 2 | 결과 vs target |
+|---|---|---|---|
+| 사진 1 (`person_a_1`) | | | |
 
 참고: Week 1 FaceNet 기준값은 본인 0.743 / 타인 0.372, 논문의 SimSwap 원본 ISM은 0.544 (CelebA-HQ).
 
@@ -89,7 +105,7 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
   - 기본값이 바뀜: `torch.load`의 `weights_only`, SimSwap 옵션 `crop_size`
   - 없어짐: `np.float`, `np.int`
   - 링크가 만료됨: antelope OneDrive 링크
-- 즉 SimSwap 자체가 잘못된 게 아니라 **코드와 실행 환경의 시간 차이** 문제였다. 오류 메시지가 대부분 원인과 해결법을 직접 알려 주었다(3번, 5번).
+- 즉 SimSwap 자체가 잘못된 게 아니라 **코드와 실행 환경의 시간 차이** 문제였다. 오류 메시지가 대부분 원인과 해결법을 직접 알려 주었다(`weights_only`, `np.float`).
 
 ### 데모가 잘 된 이유
 - 영상 속 얼굴이 source 신원으로 바뀌면서도 target의 표정·고개 방향을 따라 움직였다.
@@ -100,16 +116,28 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
 - 프레임당 약 1.25초로 느린 편이었다. 1080p 프레임 전체에서 얼굴을 찾는 검출 모델(onnxruntime)이 GPU가 아니라 CPU에서 돌았기 때문으로 보인다.
 - 실험은 사진 한 장씩 처리하므로 문제되지 않는다.
 
+### Baseline: ArcFace는 "나"라고 판단하는데 눈으로는 닮지 않았다
+- 결과 vs 내 사진(0.69~0.73)이 타인 기준(0.06~0.07)보다 훨씬 높다. **ArcFace 기준으로는 내 신원이 확실히 옮겨 갔다.**
+- 결과 vs target(0.20~0.37)은 타인 기준보다는 높다. target의 신원도 일부 남아 있다.
+- 그런데 눈으로는 닮지 않았다. SimSwap은 **신원만** 바꾸고 머리 모양, 얼굴 윤곽, 피부색, 조명은 target에서 가져온다. 사람은 이런 전체 인상으로 누구인지 판단하므로 target 사람처럼 보인다. 224×224 해상도라 눈매, 코 같은 세부 특징도 흐려진다.
+- 여러 사진에서 모두 같았으므로 사진 문제가 아니라 **SimSwap(224 모델)의 특성**으로 본다.
+- **주의:** 0.73은 SimSwap 안의 ArcFace로 잰 값이다. SimSwap은 학습할 때 바로 이 ArcFace가 source와 같은 사람이라고 판단하도록 훈련됐으므로, 같은 모델로 재면 유리하게 높게 나온다. 그래서 SimSwap과 관계없는 FaceNet으로도 재야 한다 (Week 4의 "노이즈를 만들 때 쓰지 않은 모델로 평가한다"와 같은 이유).
+
 
 ## 유의할 점
 - "Mac에는 저장만 하고, 코드를 만지려면 Colab을 연다." 노트북은 Colab에서 고치고 실행하며, Mac에는 `git pull`로 받아 보관만 한다.
 
 ## 깨달은 점
 - "arcface가 명세서를 simswap에 전달하면 그걸 바탕으로 딥페이크를 하는거니까, arcface의 명세서를 노이즈로 방해하는 것이다." → 정확히는 노이즈는 명세서가 아니라 **사진**에 넣고, ArcFace가 그 사진을 보고 스스로 틀린 명세서를 쓰게 만든다.
-- "우리가 simswap을 쓰는 이유는 단지 테스트 때문이다.
+- "우리가 simswap을 쓰는 이유는 단지 테스트 때문이다."
+
+### 다음 단계에서 활용할 것
+- **보호 효과의 기준선이 생겼다.** 원본 사진으로 합성한 결과 vs 내 사진 = 0.73 (ArcFace). 보호 사진으로 합성했을 때 이 값이 타인 기준(약 0.06) 쪽으로 내려가는지가 pilot의 판단 기준이다.
+- **눈으로 보여 주기는 어렵다.** 보호 전부터 눈으로는 닮지 않았으므로, 포트폴리오나 웹에서 "보호 전/후" 차이를 사진으로 보여 주려면 나와 머리 모양·얼굴형이 비슷한 target을 고르거나 SimSwap 512 모델을 검토한다.
+- **SimSwap은 2021년 모델이다.** 결과 품질은 최신 도구보다 낮지만, 신원을 ArcFace 계열 명세서로 옮기는 구조는 최신 도구에도 남아 있다. 그래서 SimSwap에서 먼저 확인하고, Week 7~8에 최신 도구로 넓혀 시험한다.
 
 
 ## 참고한 코드와 자료
-- SimSwap: https://github.com/neuralchen/SimSwap (CC BY-NC 4.0, 학술·비상업 용도) — 공식 Colab 노트북을 바탕으로 실행, 위 표의 수정 사항만 직접 반영
+- SimSwap: https://github.com/neuralchen/SimSwap (CC BY-NC 4.0, 학술·비상업 용도) — 공식 Colab 노트북과 `test_wholeimage_swapsingle.py`를 바탕으로 실행. 최신 환경에서 돌리기 위한 수정과 유사도 측정 셀은 AI(Claude)의 도움을 받아 추가
 - insightface antelopev2: https://github.com/deepinsight/insightface/releases/tag/v0.7
 - FaceShield 논문 요약: `docs/papers/FaceShield_summary.md`
