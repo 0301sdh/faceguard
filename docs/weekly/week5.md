@@ -1,6 +1,6 @@
 # Week 5 — Face swap 환경 준비, ArcFace Identity loss, Pilot 실험
 
-> 진행 중 문서. 현재까지: SimSwap 실행 환경 구성, 데모 실행, 내 사진 baseline (ArcFace 기준) 완료.
+> 진행 중 문서. 현재까지: SimSwap 실행 환경 구성, 데모 실행, 내 사진 baseline (ArcFace, FaceNet) 완료. 다음: pilot (ArcFace 공격).
 
 ## 목표
 실제로 막으려는 딥페이크(face swap)를 직접 돌려보고, ArcFace를 공격한 보호 사진이 face swap 결과를 방해하는지 작은 실험으로 먼저 확인한다.
@@ -11,7 +11,7 @@
 - [x] SimSwap 데모(영상 face swap) 실행 및 결과 확인
 - [x] 사진 한 장 face swap으로 바꾸기
 - [x] 내 원본 사진을 source로 face swap 실행 (baseline)
-- [ ] 결과물과 내 얼굴의 유사도 측정 (ArcFace 완료, FaceNet 남음)
+- [x] 결과물과 내 얼굴의 유사도 측정 (ArcFace, FaceNet)
 - [ ] `pgd_identity`를 ArcFace로 바꿔 보호 사진 생성 (pilot)
 - [ ] 보호 사진을 source로 face swap 실행 후 비교, Go/No-go 판단
 
@@ -96,15 +96,34 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
 - 여러 사진 모두 target의 얼굴은 바뀌었지만 **내 얼굴처럼 보이지 않았다.**
 - target의 머리 모양, 얼굴 윤곽, 피부색이 그대로 남아 "target 사람이 조금 바뀐 얼굴"로 보였다.
 
-**FaceNet 기준 (예정)**
-| source | 결과 vs 합성에 쓴 내 사진 | 결과 vs 합성에 쓰지 않은 내 사진 (평균) | 결과 vs target |
-|---|---|---|---|
-| `person_a_1` | | | |
-| `person_a_2` | | | |
-| `person_a_3` | | | |
-| `person_a_4` | | | |
+**FaceNet (SimSwap과 관계없는 모델) 기준**
+- 코드: `experiments/week5_facenet_baseline.py` (Week 1과 같은 MTCNN + InceptionResnetV1 vggface2, Mac에서 실행)
+- 입력: `data/week5/swap_person_a_N.jpg`, `data/week5/target_specific1.png` (Colab에서 내려받음, git 제외)
 
-참고: Week 1 FaceNet 기준값은 본인 0.743 / 타인 0.372, 논문의 SimSwap 원본 ISM은 0.544 (CelebA-HQ).
+기준값 (이번 사진들로 다시 측정)
+| 비교 | 값 |
+|---|---|
+| 내 원본 사진끼리 (4장 중 2장씩 6쌍 평균) — 본인 기준 | **0.761** |
+| 내 원본 사진 vs target (4쌍 평균) — 타인 기준 | **0.044** |
+
+합성 결과
+| source | 결과 vs 합성에 쓴 내 사진 | 결과 vs 합성에 쓰지 않은 내 사진 (3장 평균) | 결과 vs target |
+|---|---|---|---|
+| `person_a_1` | 0.533 | 0.572 | 0.243 |
+| `person_a_2` | 0.680 | 0.667 | 0.205 |
+| `person_a_3` | 0.613 | 0.541 | 0.366 |
+| `person_a_4` | 0.594 | 0.533 | 0.333 |
+| 범위 | **0.53 ~ 0.68** | **0.53 ~ 0.67** | 0.21 ~ 0.37 |
+
+- 예: `person_a_1` 줄은 `swap_person_a_1.jpg`를 `person_a_1`(합성에 쓴 사진), `person_a_2~4`(쓰지 않은 사진), `specific1`(target)과 비교한 것이다.
+
+**두 목격자 비교**
+| 목격자 | 결과 vs 내 사진 | 본인 기준 | 타인(target) 기준 |
+|---|---|---|---|
+| ArcFace (SimSwap 내부) | 평균 0.734 | (미측정) | 약 -0.006 |
+| FaceNet (독립) | 0.53 ~ 0.68 | 0.761 | 0.044 |
+
+참고: Week 1 FaceNet 기준값은 본인 0.743 / 타인(person_b) 0.372, 논문의 SimSwap 원본 ISM은 0.544 (CelebA-HQ).
 
 ## 해석
 
@@ -134,6 +153,13 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
 - 여러 사진에서 모두 같았으므로 사진 문제가 아니라 **SimSwap(224 모델)의 특성**으로 본다.
 - **주의:** 0.73은 SimSwap 안의 ArcFace로 잰 값이다. SimSwap은 학습할 때 바로 이 ArcFace가 source와 같은 사람이라고 판단하도록 훈련됐으므로, 같은 모델로 재면 유리하게 높게 나온다. 그래서 SimSwap과 관계없는 FaceNet으로도 재야 한다 (Week 4의 "노이즈를 만들 때 쓰지 않은 모델로 평가한다"와 같은 이유).
 
+### Baseline: FaceNet도 "나에 가깝다"고 판단했다
+- 결과 vs 내 사진(0.53~0.68)이 타인 기준(target 0.044, Week 1 타인 0.372)보다 확실히 높다. **SimSwap과 관계없는 목격자로 재도 내 신원이 옮겨 갔다.**
+- **합성에 쓰지 않은 사진과 비교해도 비슷하다**(0.53~0.67). 내가 올린 그 사진만 닮은 것이 아니라 "평소의 나"를 닮았다는 뜻이라, 실제 위협으로 볼 수 있다.
+- 다만 진짜 내 사진끼리(0.761)보다는 낮다. FaceNet 기준으로는 "나와 꽤 닮은 사람" 수준이다. SimSwap 내부 ArcFace 값이 유리하게 나온다는 예상과 맞고, 눈으로 봤을 때 "나 같지 않다"고 느낀 것과도 어느 정도 맞는다.
+- 결과 vs target(0.21~0.37)도 타인 기준보다 높다. ArcFace에서처럼 target의 흔적이 남아 있다.
+- **타인 기준값은 비교 대상에 따라 크게 달라진다.** Week 1의 타인(person_b)은 0.372, 이번 target은 0.044였다. 그래서 판단할 때 타인 기준 하나만 보지 않고 **본인 기준(0.761)과의 거리**도 함께 본다.
+
 
 ## 유의할 점
 - "Mac에는 저장만 하고, 코드를 만지려면 Colab을 연다." 노트북은 Colab에서 고치고 실행하며, Mac에는 `git pull`로 받아 보관만 한다.
@@ -143,7 +169,7 @@ target → 얼굴 찾기·정렬 → SimSwap이 명세서대로 얼굴을 다시
 - "우리가 simswap을 쓰는 이유는 단지 테스트 때문이다."
 
 ### 다음 단계에서 활용할 것
-- **보호 효과의 기준선이 생겼다.** 원본 사진으로 합성한 결과 vs 내 사진 = 평균 0.73 (ArcFace, 4장). 보호 사진으로 합성했을 때 이 값이 타인 기준(0 근처) 쪽으로 내려가는지가 pilot의 판단 기준이다.
+- **보호 효과의 기준선이 생겼다.** 원본 사진으로 합성한 결과 vs 내 사진 = 평균 0.73 (ArcFace, 4장), 0.53~0.68 (FaceNet). 보호 사진으로 합성했을 때 이 값이 타인 기준(ArcFace 0 근처, FaceNet 0.04) 쪽으로 내려가는지가 pilot의 판단 기준이다. ArcFace로 노이즈를 만들 것이므로 **FaceNet 값도 함께 떨어지는지**가 전이성 확인이 된다.
 - **눈으로 보여 주기는 어렵다.** 보호 전부터 눈으로는 닮지 않았으므로, 포트폴리오나 웹에서 "보호 전/후" 차이를 사진으로 보여 주려면 나와 머리 모양·얼굴형이 비슷한 target을 고르거나 SimSwap 512 모델을 검토한다.
 - **SimSwap은 2021년 모델이다.** 결과 품질은 최신 도구보다 낮지만, 신원을 ArcFace 계열 명세서로 옮기는 구조는 최신 도구에도 남아 있다. 그래서 SimSwap에서 먼저 확인하고, Week 7~8에 최신 도구로 넓혀 시험한다.
 
