@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image
+import torch
 import torch.nn.functional as F
 
 # Week 6 평가: Colab의 run()이 Drive에 저장한 결과를 FaceNet으로 채점한다.
@@ -32,11 +33,35 @@ def similarity(a, b):
     return F.cosine_similarity(a, b).item()
 
 
+def load_rgb(path):
+    return np.asarray(Image.open(path).convert('RGB'), dtype=np.float64)
+
+
 def psnr(path_a, path_b):
-    # 노이즈 없는 얼굴(eps0)과 보호 얼굴의 화질 차이 (dB, 높을수록 원본과 비슷)
-    a = np.asarray(Image.open(path_a).convert('RGB'), dtype=np.float64)
-    b = np.asarray(Image.open(path_b).convert('RGB'), dtype=np.float64)
+    # 노이즈 없는 얼굴(eps0)과 보호 얼굴의 픽셀 차이 (dB, 높을수록 원본과 비슷)
+    a, b = load_rgb(path_a), load_rgb(path_b)
     return 10 * np.log10(255 ** 2 / ((a - b) ** 2).mean())
+
+
+def ssim(path_a, path_b):
+    # 밝기·대비·구조가 얼마나 비슷한지 (0~1, 1에 가까울수록 원본과 비슷)
+    # 표준 설정: 11×11 가우시안 창(sigma 1.5)으로 동네마다 계산해 평균. 채널별로 계산 후 평균
+    a = torch.from_numpy(load_rgb(path_a)).permute(2, 0, 1)[:, None]   # (3, 1, H, W)
+    b = torch.from_numpy(load_rgb(path_b)).permute(2, 0, 1)[:, None]
+    coords = torch.arange(11, dtype=torch.float64) - 5
+    g = torch.exp(-coords ** 2 / (2 * 1.5 ** 2))
+    window = (g[:, None] * g[None, :] / g.sum() ** 2)[None, None]       # (1, 1, 11, 11)
+
+    def blur(x):
+        return F.conv2d(x, window)
+
+    c1, c2 = (0.01 * 255) ** 2, (0.03 * 255) ** 2
+    mu_a, mu_b = blur(a), blur(b)
+    var_a = blur(a * a) - mu_a ** 2
+    var_b = blur(b * b) - mu_b ** 2
+    cov = blur(a * b) - mu_a * mu_b
+    ssim_map = ((2 * mu_a * mu_b + c1) * (2 * cov + c2)) / ((mu_a ** 2 + mu_b ** 2 + c1) * (var_a + var_b + c2))
+    return ssim_map.mean().item()
 
 
 names = ['person_a_1', 'person_a_2', 'person_a_3', 'person_a_4']
@@ -79,5 +104,7 @@ for tag in tags:
     eps = int(re.search(r'eps(\d+)', tag).group(1))
     print(f"\n=== {tag}: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===")
     for name in names:
-        quality = psnr(f"data/week5/protected/{name}_eps0.png", f"data/week6/{tag}/{name}_eps{eps}.png")
-        score_line(tag, f"data/week6/{tag}/{name}_eps{eps}_realign.jpg", name, f" | PSNR {quality:.1f}dB")
+        clean = f"data/week5/protected/{name}_eps0.png"
+        protected = f"data/week6/{tag}/{name}_eps{eps}.png"
+        quality = f" | PSNR {psnr(clean, protected):.1f}dB | SSIM {ssim(clean, protected):.3f}"
+        score_line(tag, f"data/week6/{tag}/{name}_eps{eps}_realign.jpg", name, quality)
