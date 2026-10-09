@@ -54,7 +54,7 @@ L_id(δ; x) = cos( A(x+δ), A(x) ) − 1      # 논문 식 (11), A: ArcFace
 L_total = λ_proj·L_proj + λ_attn·L_attn + λ_mtcnn·L_mtcnn + λ_id·L_id
 ```
 - 각 λ는 grid search로 정한 하이퍼파라미터다. 본문에는 "λ_proj, λ_id는 음수, λ_attn, λ_mtcnn은 양수"라고 적혀 있다.
--  **부호 주의:** 알고리즘 1은 `x_adv ← x_adv − α·sign(∇L_total)`, 즉 L_total을 **줄이는** 방향으로 업데이트한다.
+- **부호 주의:** 알고리즘 1은 `x_adv ← x_adv − α·sign(∇L_total)`, 즉 L_total을 **줄이는** 방향으로 업데이트한다.
   - λ_proj < 0이면 L_proj가 커진다. 의도대로 동작한다.
   - 하지만 λ_id < 0과 식 (11)을 그대로 조합하면 cos가 **커지는** 방향이 된다. 논문 표기가 서로 맞지 않는 것으로 보인다.
   - 따라서 부호를 그대로 옮기지 않는다. **구현 후 반복마다 cos 유사도가 실제로 내려가는지 출력해서 확인한다.**
@@ -160,7 +160,7 @@ VGGFace2-HQ에서 SimSwap: 0.681 → 0.314.
 
 ### Week 5 (ArcFace Identity loss + SimSwap pilot)
 - **baseline 목표치:** 논문의 SimSwap 원본 ISM은 0.544, 보호 후 0.184다(CelebA-HQ). 내 실험의 baseline과 비교할 기준으로 쓴다.
-- ⚠️ **위험 요소:** 표 3에서 L_proj만 빼도 SimSwap 보호가 사라졌다. 즉 **Identity loss 하나만으로 SimSwap이 막힌다는 근거는 논문에 없다.** pilot 결과가 약하면 이것이 원인 후보 중 하나다. 이 경우 Projector loss를 앞당겨 붙여보는 것도 선택지로 둔다.
+- **위험 요소:** 표 3에서 L_proj만 빼도 SimSwap 보호가 사라졌다. 즉 **Identity loss 하나만으로 SimSwap이 막힌다는 근거는 논문에 없다.** pilot 결과가 약하면 이것이 원인 후보 중 하나다. 이 경우 Projector loss를 앞당겨 붙여보는 것도 선택지로 둔다.
 - ArcFace 2종 ensemble을 쓴다. 특히 SimSwap 내부의 ArcFace와 같은 가중치가 포함되어 있는지 확인한다.
 - 부호 문제(3-3)가 있으니 반복마다 cos 유사도를 출력해서 확인한다.
 
