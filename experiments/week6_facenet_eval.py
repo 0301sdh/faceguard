@@ -84,14 +84,16 @@ def judge(score):
 
 
 def score_line(label, result_path, name, extra=""):
+    # 한 줄 출력하고, 합성에 쓴 사진과의 유사도를 돌려줌 (얼굴을 못 찾으면 None)
     result = get_embedding(result_path)
     if result is None:
-        return
+        return None
     used = similarity(result, mine[name])
     others = [similarity(result, mine[o]) for o in names if o != name]
     others_avg = sum(others) / len(others)
     print(f"{label:<14} {name} | 합성에 쓴 사진 {used:.3f} ({judge(used)}) | "
           f"쓰지 않은 3장 평균 {others_avg:.3f} ({judge(others_avg)}){extra}")
+    return used
 
 
 # 2) 기준선: 보호 안 한 합성 결과 (Week 5 pilot의 eps0 재정렬 결과. 무작위 요소가 없어 Week 6과 같음)
@@ -100,6 +102,7 @@ for name in names:
     score_line("eps0", f"data/week5/output_pilot/{name}_eps0_realign.jpg", name)
 
 # 3) Week 6 결과 채점
+scores = {}   # tag → {name: 합성에 쓴 사진과의 유사도}
 for tag in tags:
     eps = int(re.search(r'eps(\d+)', tag).group(1))
     print(f"\n=== {tag}: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===")
@@ -107,4 +110,22 @@ for tag in tags:
         clean = f"data/week5/protected/{name}_eps0.png"
         protected = f"data/week6/{tag}/{name}_eps{eps}.png"
         quality = f" | PSNR {psnr(clean, protected):.1f}dB | SSIM {ssim(clean, protected):.3f}"
-        score_line(tag, f"data/week6/{tag}/{name}_eps{eps}_realign.jpg", name, quality)
+        scores.setdefault(tag, {})[name] = score_line(tag, f"data/week6/{tag}/{name}_eps{eps}_realign.jpg", name, quality)
+
+# 4) seed 묶음 요약: 이름 끝의 _seedN만 다른 tag들을 한 설정으로 묶어 평균과 표준편차를 계산
+groups = {}
+for tag in tags:
+    base = re.sub(r'_seed\d+$', '', tag)
+    if base != tag:
+        groups.setdefault(base, []).append(tag)
+
+if groups:
+    print("\n=== seed 묶음 요약: 합성에 쓴 사진과의 유사도 (FaceNet), 평균 ± 표준편차 ===")
+    for base, group in groups.items():
+        cells, all_values = [], []
+        for name in names:
+            values = np.array([scores[t][name] for t in group if scores[t].get(name) is not None])
+            all_values.extend(values)
+            cells.append(f"{name[-3:]} {values.mean():.3f}±{values.std():.3f} ({judge(values.mean())})")
+        overall = np.mean(all_values)
+        print(f"{base:<10} (seed {len(group)}개) | " + " | ".join(cells) + f" | 4장 평균 {overall:.3f}")
