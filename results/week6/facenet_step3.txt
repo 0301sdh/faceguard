@@ -1,0 +1,43 @@
+FaceNet 판정 기준: 실패 >= 0.686 | 부분 0.365 ~ 0.686 | 성공 < 0.365
+
+=== 기준선: 보호 안 함 (eps=0) ===
+eps0           person_a_1 | 합성에 쓴 사진 0.593 (부분) | 쓰지 않은 3장 평균 0.593 (부분)
+eps0           person_a_2 | 합성에 쓴 사진 0.704 (실패) | 쓰지 않은 3장 평균 0.644 (부분)
+eps0           person_a_3 | 합성에 쓴 사진 0.594 (부분) | 쓰지 않은 3장 평균 0.503 (부분)
+eps0           person_a_4 | 합성에 쓴 사진 0.626 (부분) | 쓰지 않은 3장 평균 0.581 (부분)
+
+=== affine_eps4: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps4    person_a_1 | 합성에 쓴 사진 0.265 (성공) | 쓰지 않은 3장 평균 0.184 (성공) | PSNR 38.6dB | SSIM 0.964
+affine_eps4    person_a_2 | 합성에 쓴 사진 0.337 (성공) | 쓰지 않은 3장 평균 0.255 (성공) | PSNR 38.6dB | SSIM 0.960
+affine_eps4    person_a_3 | 합성에 쓴 사진 0.448 (부분) | 쓰지 않은 3장 평균 0.439 (부분) | PSNR 38.5dB | SSIM 0.960
+affine_eps4    person_a_4 | 합성에 쓴 사진 0.579 (부분) | 쓰지 않은 3장 평균 0.522 (부분) | PSNR 38.5dB | SSIM 0.904
+
+=== affine_eps4_steps50: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps4_steps50 person_a_1 | 합성에 쓴 사진 0.302 (성공) | 쓰지 않은 3장 평균 0.191 (성공) | PSNR 38.4dB | SSIM 0.963
+affine_eps4_steps50 person_a_2 | 합성에 쓴 사진 0.309 (성공) | 쓰지 않은 3장 평균 0.261 (성공) | PSNR 38.7dB | SSIM 0.961
+affine_eps4_steps50 person_a_3 | 합성에 쓴 사진 0.423 (부분) | 쓰지 않은 3장 평균 0.327 (성공) | PSNR 38.4dB | SSIM 0.960
+affine_eps4_steps50 person_a_4 | 합성에 쓴 사진 0.538 (부분) | 쓰지 않은 3장 평균 0.474 (부분) | PSNR 38.5dB | SSIM 0.907
+
+=== affine_eps8: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps8    person_a_1 | 합성에 쓴 사진 0.149 (성공) | 쓰지 않은 3장 평균 0.100 (성공) | PSNR 33.4dB | SSIM 0.888
+affine_eps8    person_a_2 | 합성에 쓴 사진 0.137 (성공) | 쓰지 않은 3장 평균 0.108 (성공) | PSNR 33.5dB | SSIM 0.883
+affine_eps8    person_a_3 | 합성에 쓴 사진 0.257 (성공) | 쓰지 않은 3장 평균 0.216 (성공) | PSNR 33.2dB | SSIM 0.877
+affine_eps8    person_a_4 | 합성에 쓴 사진 0.175 (성공) | 쓰지 않은 3장 평균 0.247 (성공) | PSNR 33.2dB | SSIM 0.797
+
+=== affine_eps8_steps50: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps8_steps50 person_a_1 | 합성에 쓴 사진 0.033 (성공) | 쓰지 않은 3장 평균 -0.054 (성공) | PSNR 33.3dB | SSIM 0.885
+affine_eps8_steps50 person_a_2 | 합성에 쓴 사진 0.245 (성공) | 쓰지 않은 3장 평균 0.283 (성공) | PSNR 33.4dB | SSIM 0.883
+affine_eps8_steps50 person_a_3 | 합성에 쓴 사진 0.193 (성공) | 쓰지 않은 3장 평균 0.136 (성공) | PSNR 33.1dB | SSIM 0.876
+affine_eps8_steps50 person_a_4 | 합성에 쓴 사진 0.197 (성공) | 쓰지 않은 3장 평균 0.268 (성공) | PSNR 33.1dB | SSIM 0.798
+
+=== affine_eps12: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps12   person_a_1 | 합성에 쓴 사진 -0.029 (성공) | 쓰지 않은 3장 평균 -0.129 (성공) | PSNR 30.3dB | SSIM 0.791
+affine_eps12   person_a_2 | 합성에 쓴 사진 -0.033 (성공) | 쓰지 않은 3장 평균 -0.016 (성공) | PSNR 30.5dB | SSIM 0.797
+affine_eps12   person_a_3 | 합성에 쓴 사진 0.072 (성공) | 쓰지 않은 3장 평균 0.092 (성공) | PSNR 30.1dB | SSIM 0.779
+affine_eps12   person_a_4 | 합성에 쓴 사진 0.130 (성공) | 쓰지 않은 3장 평균 0.185 (성공) | PSNR 30.1dB | SSIM 0.700
+
+=== affine_eps12_steps50: (B) 재정렬, SimSwap 결과 vs 내 사진 (FaceNet) ===
+affine_eps12_steps50 person_a_1 | 합성에 쓴 사진 -0.023 (성공) | 쓰지 않은 3장 평균 -0.026 (성공) | PSNR 30.3dB | SSIM 0.792
+affine_eps12_steps50 person_a_2 | 합성에 쓴 사진 -0.127 (성공) | 쓰지 않은 3장 평균 -0.090 (성공) | PSNR 30.6dB | SSIM 0.800
+affine_eps12_steps50 person_a_3 | 합성에 쓴 사진 0.102 (성공) | 쓰지 않은 3장 평균 0.151 (성공) | PSNR 30.2dB | SSIM 0.780
+affine_eps12_steps50 person_a_4 | 합성에 쓴 사진 0.080 (성공) | 쓰지 않은 3장 평균 0.125 (성공) | PSNR 30.2dB | SSIM 0.707
