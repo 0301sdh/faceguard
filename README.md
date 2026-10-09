@@ -31,7 +31,7 @@
 | 변형 견고성 | JPEG 90/75/50, 크기 조절, 자르기, 블러 등 11가지에서 효과의 89% 이상 유지 |
 | 화질 | PSNR 약 36.8dB |
 
-![변형별 효과 유지율](docs/weekly/images/week6_3_robustness.png)
+[변형별 효과 유지율 그래프](docs/weekly/images/week6_3_robustness.png)
 
 - 사진 4장, seed 3개 평균입니다. 4장 중 1장은 FaceNet 기준으로 부분적으로만 보호되었습니다.
 - 얼굴만 잘라낸 224×224 사진으로 실험했습니다. 전체 사진에서의 효과는 아직 확인하지 않았습니다.
