@@ -66,6 +66,8 @@ results/         실험 결과 숫자 원본 (사진별 전체 수치)
 - 로컬 (Week 1~4 실험, FaceNet 평가): macOS, Python 가상환경(`.venv`), PyTorch, facenet-pytorch
 - Colab (Week 5~6): T4 GPU, SimSwap, insightface. 노트북의 첫 셀부터 순서대로 실행하고, 사진은 Google Drive의 `faceguard/photos`에 둡니다.
 
+아래는 Colab 결과를 FaceNet으로 채점하는 예시입니다. 얼굴 사진과 딥페이크 결과물(`data/`)이 있어야 실행됩니다. 이 파일들은 개인정보라 저장소에 포함하지 않았습니다.
+
 ```bash
 .venv/bin/python experiments/week6_facenet_eval.py
 ```
