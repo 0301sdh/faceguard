@@ -13,6 +13,8 @@
 | `week6/facenet_step4.txt` | ④ seed 3개 반복 (평균 ± 표준편차) | `experiments/week6_facenet_eval.py` |
 | `week6/facenet_step5.txt` | ⑤ 변형 11가지 요약 | `experiments/week6_facenet_robust.py` |
 | `week6/robust_facenet.csv` | ⑤ 사진·seed·변형별 FaceNet 점수 | `experiments/week6_facenet_robust.py` |
+| `week7/facenet_pilot.txt` | FaceID baseline과 pilot(Week 6 보호 사진 eps 5)의 FaceNet 유사도 | `experiments/week7_facenet_eval.py` |
+| `week7/arcface_colab.txt` | FaceID 눈금 잡기, baseline, pilot의 insightface ArcFace 점수 | `notebooks/ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
 
 - FaceNet 채점에는 무작위 요소가 없어서, 같은 합성 결과를 다시 채점하면 같은 숫자가 나온다.
 - ArcFace 점수는 Colab 노트북(`notebooks/simswap_eval.ipynb`, `notebooks/simswap_robustness.ipynb`)의 셀 출력에 남아 있다.

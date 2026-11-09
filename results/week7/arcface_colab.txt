@@ -1,0 +1,24 @@
+Week 7 insightface ArcFace (buffalo_l) 점수. notebooks/ipadapter_faceid_eval.ipynb 셀 출력을 옮김
+(노트북은 얼굴 사진 때문에 출력 없이 저장하므로 숫자를 여기에 남긴다)
+
+=== 1. 눈금 잡기 (원본 사진 4장, 타인 = Week 5 SimSwap target_specific1.png) ===
+본인끼리 (6쌍): 0.567 0.510 0.653 0.625 0.725 0.736 | 최소 0.510
+타인과 (4쌍): -0.023 -0.138 -0.043 -0.062 | 평균 -0.066
+ArcFace 판정 기준: 실패 >= 0.510 | 부분 0.222 ~ 0.510 | 성공 < 0.222
+
+=== 확인: person_a_1 원본 사진 → 생성 1장 (seed 0) ===
+생성 결과 vs 내 사진: 0.746
+
+=== 2. baseline: 입력 week6/robust_eps0/person_a_k_eps0.png (보호 안 한 224×224 crop) ===
+person_a_1 | seed별 0.756 0.733 0.761 | 평균 0.750 (실패)
+person_a_2 | seed별 0.633 0.729 0.695 | 평균 0.686 (실패)
+person_a_3 | seed별 0.691 0.738 0.765 | 평균 0.731 (실패)
+person_a_4 | seed별 0.748 0.747 0.741 | 평균 0.745 (실패)
+4장 평균 0.728 (실패)
+
+=== 3. pilot_eps5_seed0: 입력 week6/eps5_n4_seed0/person_a_k_eps5.png (Week 6 보호 사진) ===
+person_a_1 | seed별 0.402 0.394 0.398 | 평균 0.398 (부분)
+person_a_2 | seed별 0.446 0.424 0.421 | 평균 0.430 (부분)
+person_a_3 | seed별 0.444 0.547 0.578 | 평균 0.523 (실패)
+person_a_4 | seed별 0.542 0.573 0.543 | 평균 0.553 (실패)
+4장 평균 0.476 (부분)
