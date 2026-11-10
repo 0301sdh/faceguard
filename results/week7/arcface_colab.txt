@@ -22,3 +22,26 @@ person_a_2 | seed별 0.446 0.424 0.421 | 평균 0.430 (부분)
 person_a_3 | seed별 0.444 0.547 0.578 | 평균 0.523 (실패)
 person_a_4 | seed별 0.542 0.573 0.543 | 평균 0.553 (실패)
 4장 평균 0.476 (부분)
+
+=== 4. ensemble 준비 (notebooks/simswap_robustness.ipynb) ===
+insightface ArcFace onnx → PyTorch(onnx2torch): onnx vs PyTorch 유사도 4장 모두 1.00000
+gradient 확인 (person_a_1, ±5/255 랜덤 출발): 유사도 0.998 | gradient 평균 크기 4.46e-05 / 4.75e-05 (두 번 실행) | 0인 비율 0.0%
+FaceID 정렬 따라 하기 (grid_sample) vs 실제 방식 (cv2.warpAffine + onnx):
+person_a_1 0.9999 | person_a_2 0.9998 | person_a_3 0.9999 | person_a_4 0.9999
+참고: 단순 112 축소 vs 실제 방식: 0.9586 / 0.9364 / 0.9646 / 0.9568
+
+=== 5. ensemble 공격 ens_eps5_n4_seed0 (eps 5/255, 변형 4개, steps 30, 노이즈 seed 0, loss = SimSwap ArcFace + FaceID ArcFace) ===
+SimSwap (B) 재정렬 결과 vs 내 사진 (SimSwap ArcFace): -0.063 / -0.079 / 0.080 / 0.054 | 평균 -0.002 (4장 성공)
+입력 단계 FaceID ArcFace 유사도 (보호 얼굴 vs 보호 안 한 얼굴), Week 6 보호 → ensemble:
+person_a_1 0.678 → 0.020
+person_a_2 0.530 → -0.119
+person_a_3 0.697 → 0.146
+person_a_4 0.662 → 0.012
+평균 0.642 → 0.015
+
+=== 6. ens_eps5_seed0: 입력 week6/ens_eps5_n4_seed0/person_a_k_eps5.png (ensemble 보호 사진) ===
+person_a_1 | seed별 0.127 0.118 0.060 | 평균 0.102 (성공)
+person_a_2 | seed별 0.006 0.008 -0.005 | 평균 0.003 (성공)
+person_a_3 | seed별 0.186 0.229 0.150 | 평균 0.188 (성공)
+person_a_4 | seed별 0.026 0.069 0.020 | 평균 0.038 (성공)
+4장 평균 0.083 (성공)
