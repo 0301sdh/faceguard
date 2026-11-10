@@ -1,6 +1,6 @@
 # Week 7 — 신원 유지 이미지 생성(IP-Adapter FaceID) 확장
 
-> Week 7 진행 중. 지금까지의 결론: 보호 안 한 사진 한 장으로 FaceID가 나를 확실히 복제한다(FaceNet 0.82, 눈으로도 닮음). Week 6 노이즈는 FaceID에 일부만 전이됐다(ArcFace 0.73 → 0.48, FaceNet 0.82 → 0.69). SimSwap ArcFace와 FaceID의 ArcFace를 함께 공격(ensemble)하자 ArcFace 0.083(성공), 눈으로도 다른 사람이 됐지만, 공격에 쓰지 않은 FaceNet은 0.510(부분)이다. SimSwap 보호는 유지(4장 성공). 다음: 노이즈 seed 반복, FaceNet 쪽 원인 확인.
+> Week 7 진행 중. 지금까지의 결론: 보호 안 한 사진 한 장으로 FaceID가 나를 확실히 복제한다(FaceNet 0.82, 눈으로도 닮음). Week 6 노이즈는 FaceID에 일부만 전이됐다(ArcFace 0.73 → 0.48, FaceNet 0.82 → 0.69). SimSwap ArcFace와 FaceID의 ArcFace를 함께 공격(ensemble)하자, 노이즈 seed 3개 모두 FaceID 생성 결과가 ArcFace 0.062(성공), 눈으로도 다른 사람이 됐다. 공격에 쓰지 않은 FaceNet은 0.438(부분)이고 노이즈 seed에 따라 0.325 ~ 0.510으로 흔들린다. SimSwap 보호는 유지(ArcFace 12개 모두 성공, FaceNet 평균 0.340 성공). 다음: FaceNet 쪽 원인 확인.
 
 ## 요약
 
@@ -10,7 +10,7 @@
 | Baseline (보호 안 함) | ArcFace **0.728**, FaceNet **0.820**, 눈으로 4장 모두 닮음 → 위협이 실제로 작동함 |
 | Pilot (Week 6 보호 사진, eps 5/255) | ArcFace 0.728 → **0.476** (부분), FaceNet 0.820 → **0.685** (사실상 실패) |
 | Pilot 판단 | **조건부 No-go.** 전이는 되지만 약하다 → FaceID가 쓰는 ArcFace를 직접 공격해야 함 |
-| Ensemble (SimSwap ArcFace + FaceID ArcFace, eps 5/255, 노이즈 seed 0) | ArcFace 0.728 → **0.083** (성공), FaceNet 0.820 → **0.510** (부분), 눈으로 4장 모두 다른 사람. SimSwap은 ArcFace -0.002로 4장 성공 유지 |
+| Ensemble (SimSwap ArcFace + FaceID ArcFace, eps 5/255, 노이즈 seed 3개) | FaceID: ArcFace 0.728 → **0.062** (성공), FaceNet 0.820 → **0.438** (부분, seed별 0.325 ~ 0.510), 눈으로 다른 사람. SimSwap: ArcFace -0.025 (12개 모두 성공), FaceNet 0.340 (성공, Week 6은 0.297) |
 | Ensemble 판단 | **조건부 Go.** 공격한 모델과 눈으로는 막힘. 공격하지 않은 FaceNet에서는 부분 보호 |
 
 ---
@@ -26,7 +26,8 @@
 - [x] Pilot: Week 6 보호 사진(eps 5/255, seed0) 4장 × seed 3개
 - [x] Ensemble 준비: insightface ArcFace onnx → PyTorch 변환, gradient 확인, FaceID 정렬 따라 하기
 - [x] Ensemble: SimSwap ArcFace + insightface ArcFace 함께 공격 (노이즈 seed 0)
-- [ ] Ensemble 노이즈 seed 1·2 반복, SimSwap 결과 FaceNet 채점
+- [x] Ensemble 노이즈 seed 1·2 반복, SimSwap 결과 FaceNet 채점
+- [ ] FaceNet 부분 보호의 원인 확인
 - [ ] (선택) Projector loss: CLIP을 쓰는 FaceID Plus
 - [ ] loss 조합별 비교 표
 
@@ -197,15 +198,54 @@ loss = cos(SimSwap ArcFace(x+δ), 원본) + cos(FaceID ArcFace(정렬(x+δ)), �
 ### Go / No-go: 조건부 Go
 - 막고 싶은 도구(FaceID)가 쓰는 모델과 사람 눈 기준으로는 막혔다. Week 6 노이즈만으로는 못 막던 것이다.
 - 남은 확인
-  - 노이즈 seed 1·2 반복 (지금은 seed 0 하나)
-  - SimSwap 결과의 FaceNet 채점 (보호가 약해졌는지 독립 모델로 확인)
+  - 노이즈 seed 1·2 반복 (지금은 seed 0 하나) → 7절
+  - SimSwap 결과의 FaceNet 채점 (보호가 약해졌는지 독립 모델로 확인) → 7절
   - FaceNet 0.510이 남는 원인: 타인 여러 명으로 FaceNet 눈금 다시 잡기, 또는 FaceNet을 ensemble에 추가하는 실험
+
+### 7. Ensemble 반복 (노이즈 seed 0, 1, 2)
+- Week 6 ④와 같은 방식: 노이즈의 랜덤 출발과 EOT 변형만 바뀐다. 생성 seed(0, 1, 2)와 프롬프트는 그대로
+- 사진 한 장당 노이즈 3개 × 생성 3장 = 9장 채점
+
+**FaceID 생성 결과 vs 내 사진**
+
+| 사진 | ArcFace 노이즈 seed 0 / 1 / 2 | ArcFace 평균 | FaceNet 노이즈 seed 0 / 1 / 2 | FaceNet 평균 (성공 개수) |
+|---|---|---|---|---|
+| a_1 | 0.102 / 0.067 / 0.067 | 0.079 | 0.651 / 0.576 / 0.265 | 0.497 (3/9) |
+| a_2 | 0.003 / 0.066 / 0.001 | 0.023 | 0.331 / 0.283 / 0.374 | 0.324 (6/8) |
+| a_3 | 0.188 / 0.169 / 0.054 | 0.137 | 0.568 / 0.494 / 0.347 | 0.470 (2/9) |
+| a_4 | 0.038 / 0.017 / -0.032 | 0.008 | 0.491 / 0.520 / 0.331 | 0.447 (2/9) |
+| **평균** | **0.083 / 0.080 / 0.023** | **0.062 (성공)** | **0.510 / 0.468 / 0.325** | **0.438 (부분, 13/35)** |
+
+- ArcFace: 36장 중 성공선(0.222) 위는 seed 0의 a_3 하나(0.229)
+- FaceNet: a_2 노이즈 seed 2의 생성 seed 2 이미지는 FaceNet(MTCNN)이 얼굴을 찾지 못해 빠졌다 (35장)
+
+**SimSwap 결과 vs 내 사진 (Week 6 보호 → ensemble, 노이즈 seed 3개 평균)**
+
+| 사진 | SimSwap ArcFace | FaceNet |
+|---|---|---|
+| a_1 | -0.224 → -0.095 | 0.263 → 0.282 |
+| a_2 | -0.193 → -0.099 | 0.280 → 0.343 |
+| a_3 | -0.004 → 0.081 | 0.260 → 0.235 |
+| a_4 | -0.093 → 0.014 | 0.384 → 0.500 (부분) |
+| **평균** | **-0.129 → -0.025 (12개 모두 성공)** | **0.297 → 0.340 (성공)** |
+
+- 화질: PSNR 36.7 ~ 37.1dB → 36.3 ~ 36.6dB, SSIM 거의 같음 (eps가 같아서)
+- 숫자 전체: `results/week7/arcface_colab.txt`, `facenet_ensemble.txt`, `facenet_simswap_ensemble.txt`
+
+### 반복 해석
+- **FaceID의 ArcFace와 눈 기준 보호는 노이즈 seed에 관계없이 재현된다** (seed별 0.083 / 0.080 / 0.023). seed 0이 운이 아니었다.
+- **SimSwap 보호도 유지된다.** ArcFace는 Week 6보다 여유가 줄었지만(-0.129 → -0.025) 12개 모두 성공, FaceNet도 0.297 → 0.340으로 조금 올랐을 뿐 성공이다. a_4는 Week 6처럼 부분이다.
+- **FaceNet으로 본 FaceID 보호는 노이즈 seed에 따라 크게 흔들린다** (0.510 / 0.468 / 0.325). seed 2는 성공선 아래였다.
+  - ArcFace 점수는 세 seed가 비슷한데 FaceNet만 흔들린다 → 노이즈는 매번 ArcFace를 확실히 속이지만, ArcFace가 보지 않는 특징이 얼마나 함께 바뀌는지는 그때그때 다르다.
+  - 즉 FaceNet 기준 효과는 **ArcFace를 공격하다 덤으로 얻는 효과**라서 안정적이지 않다. 안정적으로 만들려면 FaceNet류의 다른 모델도 공격에 넣거나, 그 효과를 덤이 아니라 목표로 삼아야 한다.
+- seed 0만 보고 내린 판단(조건부 Go)은 그대로다.
 
 ## 한계
 - 프롬프트 1개, 상반신 장면만 시험했다. 전신처럼 얼굴이 작은 장면은 결과가 다를 수 있다.
 - FaceID의 LoRA는 쓰지 않았다. LoRA를 쓰면 더 닮게 그려질 수 있다.
 - 사진 4장, 본인 1명의 결과다.
-- Ensemble은 노이즈 seed 1개, 생성 seed 3개의 결과다.
+- Ensemble은 노이즈 seed 3개, 생성 seed 3개의 결과다.
+- 노이즈 seed 0의 보호 사진은 seed 1·2를 돌리기 전에 다시 만들어졌다(GPU 계산 차이로 입력 유사도가 0.00x 수준으로 다름). FaceID 생성 seed 0은 첫 번째 버전으로, SimSwap FaceNet 채점은 새 버전으로 했다.
 - Ensemble의 FaceID 정렬 변환(M)은 보호 전 얼굴에서 한 번 구했다. 노이즈 때문에 FaceID가 찾는 5점이 조금 바뀔 수 있지만, EOT 변형(회전·크기·이동)이 이 차이를 덮는다고 가정했다.
 
 ## 깨달은 점
@@ -216,6 +256,7 @@ loss = cos(SimSwap ArcFace(x+δ), 원본) + cos(FaceID ArcFace(정렬(x+δ)), �
 - 모델을 공격하려면 모델 파일만 있으면 안 되고, gradient가 흐르는 형태(PyTorch)와 그 모델이 사진을 자르는 방식(정렬)까지 똑같이 따라 해야 한다. 그냥 줄여서 넣었다면 과녁 옆을 겨눴을 것이다.
 - 공격할 모델을 하나 더하면 그 모델은 확실히 막히지만, 같은 노이즈 크기 안에서 힘을 나눠 쓰므로 원래 모델의 여유가 줄어든다.
 - 공격에 쓴 모델로 잰 점수(0.083)와 쓰지 않은 모델로 잰 점수(0.510)는 다르다. 진짜 효과를 말하려면 공격에 쓰지 않은 모델로도 재야 한다.
+- 한 번 잘 나온 결과는 운일 수 있다. 공격한 모델 점수는 seed를 바꿔도 같았지만, 공격하지 않은 모델 점수는 seed마다 크게 달랐다(0.325 ~ 0.510). 반복해야 무엇이 안정적인 효과이고 무엇이 덤인지 구별된다.
 
 ## 참고한 코드와 자료
 - IP-Adapter: https://github.com/tencent-ailab/IP-Adapter
