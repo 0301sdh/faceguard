@@ -1,0 +1,22 @@
+LFW 타인 500명 (얼굴 못 찾음 0명) × 내 사진 4장 = 2000쌍
+평균 0.007 | 표준편차 0.139 | 최대 0.483
+백분위: 50% 0.004 | 90% 0.188 | 95% 0.238 | 99% 0.350 | 99.9% 0.475
+기존 타인 (target_specific1)       0.044 → 타인 쌍 중 이보다 높은 비율 37.75%
+기존 성공선                         0.365 → 타인 쌍 중 이보다 높은 비율 0.90%
+FaceID ensemble 노이즈 seed 2     0.325 → 타인 쌍 중 이보다 높은 비율 1.70%
+FaceID ensemble 평균             0.438 → 타인 쌍 중 이보다 높은 비율 0.35%
+FaceID ensemble 노이즈 seed 0     0.510 → 타인 쌍 중 이보다 높은 비율 0.00%
+Week 6 SimSwap 보호 평균           0.297 → 타인 쌍 중 이보다 높은 비율 2.15%
+기존 실패선 (내 사진끼리 최소)             0.686 → 타인 쌍 중 이보다 높은 비율 0.00%
+
+나와 가장 비슷한 타인 10명 (내 사진 4장 평균):
+  0.459  Brett_Perry
+  0.448  Griffin_Colvin
+  0.376  Masamori_Tokuyama
+  0.363  Kim_Hong-gul
+  0.338  Rohman_al-Ghozi
+  0.331  Shawn_Bradley
+  0.299  Lokendra_Bahadur_Chand
+  0.291  AJ_Cook
+  0.251  Billy_Gilman
+  0.248  Ernie_Stewart
