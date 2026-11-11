@@ -16,6 +16,7 @@
 | `week7/facenet_ensemble.txt` | FaceID baseline, pilot(Week 6 보호 사진 eps 5), ensemble 보호 사진의 FaceNet 유사도 | `experiments/week7_facenet_eval.py` |
 | `week7/facenet_simswap_ensemble.txt` | SimSwap 결과의 FaceNet 유사도: Week 6 보호(eps5_n4) vs ensemble, 노이즈 seed 3개 | `experiments/week6_facenet_eval.py` |
 | `week7/facenet_calibration_lfw.txt` | FaceNet 눈금 다시 잡기: LFW 타인 500명 vs 내 사진 4장 유사도 분포 | `experiments/week7_facenet_calibration.py` |
+| `week7/facenet_stranger_gen.txt` | FaceID가 LFW 타인 24명을 그린 이미지 vs 내 사진 (FaceNet) + baseline·pilot·ensemble을 같은 잣대(내 사진 4장 평균)로 | `experiments/week7_facenet_stranger_gen.py` |
 | `week7/arcface_colab.txt` | FaceID 눈금 잡기, baseline, pilot, ensemble 준비·공격·생성의 insightface ArcFace 점수 | `notebooks/ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
 
 - FaceNet 채점에는 무작위 요소가 없어서, 같은 합성 결과를 다시 채점하면 같은 숫자가 나온다.

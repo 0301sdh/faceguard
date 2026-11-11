@@ -1,6 +1,6 @@
 # Week 7 — 신원 유지 이미지 생성(IP-Adapter FaceID) 확장
 
-> Week 7 진행 중. 지금까지의 결론: 보호 안 한 사진 한 장으로 FaceID가 나를 확실히 복제한다(FaceNet 0.82, 눈으로도 닮음). Week 6 노이즈는 FaceID에 일부만 전이됐다(ArcFace 0.73 → 0.48, FaceNet 0.82 → 0.69). SimSwap ArcFace와 FaceID의 ArcFace를 함께 공격(ensemble)하자, 노이즈 seed 3개 모두 FaceID 생성 결과가 ArcFace 0.062(성공), 눈으로도 다른 사람이 됐다. 공격에 쓰지 않은 FaceNet은 0.438(부분)이고 노이즈 seed에 따라 0.325 ~ 0.510으로 흔들린다. SimSwap 보호는 유지(ArcFace 12개 모두 성공, FaceNet 평균 0.340 성공). 다음: FaceNet 쪽 원인 확인.
+> Week 7 진행 중. 지금까지의 결론: 보호 안 한 사진 한 장으로 FaceID가 나를 확실히 복제한다(FaceNet 0.82, 눈으로도 닮음). Week 6 노이즈는 FaceID에 일부만 전이됐다(ArcFace 0.73 → 0.48, FaceNet 0.82 → 0.69). SimSwap ArcFace와 FaceID의 ArcFace를 함께 공격(ensemble)하자, 노이즈 seed 3개 모두 FaceID 생성 결과가 ArcFace 0.062(성공), 눈으로도 다른 사람이 됐다. 공격에 쓰지 않은 FaceNet은 0.438(부분)이고 노이즈 seed에 따라 0.325 ~ 0.510으로 흔들린다. SimSwap 보호는 유지(ArcFace 12개 모두 성공, FaceNet 평균 0.340 성공). 타인으로 눈금을 다시 확인한 결과, ArcFace 기준으로는 FaceID가 남을 그린 것과 같은 수준이지만 FaceNet 기준으로는 남(0.04 ~ 0.08)보다 확실히 나를 닮았다(0.398). **최종 판단: Go.** FaceNet에 남은 흔적은 한계로 기록하고 Week 8 개선 후보로 넘긴다. 남은 일: 비교 표와 마무리 정리.
 
 ## 요약
 
@@ -11,7 +11,8 @@
 | Pilot (Week 6 보호 사진, eps 5/255) | ArcFace 0.728 → **0.476** (부분), FaceNet 0.820 → **0.685** (사실상 실패) |
 | Pilot 판단 | **조건부 No-go.** 전이는 되지만 약하다 → FaceID가 쓰는 ArcFace를 직접 공격해야 함 |
 | Ensemble (SimSwap ArcFace + FaceID ArcFace, eps 5/255, 노이즈 seed 3개) | FaceID: ArcFace 0.728 → **0.062** (성공), FaceNet 0.820 → **0.438** (부분, seed별 0.325 ~ 0.510), 눈으로 다른 사람. SimSwap: ArcFace -0.025 (12개 모두 성공), FaceNet 0.340 (성공, Week 6은 0.297) |
-| Ensemble 판단 | **조건부 Go.** 공격한 모델과 눈으로는 막힘. 공격하지 않은 FaceNet에서는 부분 보호 |
+| Ensemble 판단 | 조건부 Go → 눈금 확인 뒤 **Go** (아래 최종 판단) |
+| 타인 기준선 (FaceID가 LFW 타인 24명을 그림) | ArcFace 0.012 ~ 0.036 → ensemble(0.062)은 **남 수준**. FaceNet 0.044 ~ 0.078 → ensemble(0.398)은 **남보다 확실히 나를 닮음** |
 
 ---
 
@@ -27,7 +28,8 @@
 - [x] Ensemble 준비: insightface ArcFace onnx → PyTorch 변환, gradient 확인, FaceID 정렬 따라 하기
 - [x] Ensemble: SimSwap ArcFace + insightface ArcFace 함께 공격 (노이즈 seed 0)
 - [x] Ensemble 노이즈 seed 1·2 반복, SimSwap 결과 FaceNet 채점
-- [ ] FaceNet 부분 보호의 원인 확인
+- [x] FaceNet 눈금 확인: LFW 실제 사진 타인 500명, FaceID가 그린 타인 24명
+- [x] 최종 판단: **Go** (FaceNet 흔적은 한계로 기록, Week 8로)
 - [ ] (선택) Projector loss: CLIP을 쓰는 FaceID Plus
 - [ ] loss 조합별 비교 표
 
@@ -240,10 +242,61 @@ loss = cos(SimSwap ArcFace(x+δ), 원본) + cos(FaceID ArcFace(정렬(x+δ)), �
   - 즉 FaceNet 기준 효과는 **ArcFace를 공격하다 덤으로 얻는 효과**라서 안정적이지 않다. 안정적으로 만들려면 FaceNet류의 다른 모델도 공격에 넣거나, 그 효과를 덤이 아니라 목표로 삼아야 한다.
 - seed 0만 보고 내린 판단(조건부 Go)은 그대로다.
 
+### 8. 눈금 확인: 0.438은 정말 '부분'인가
+FaceNet 성공선(0.365)은 타인 1명(target_specific1, 0.044)으로 정했다. 이 사람이 유난히 나와 다르게 생겼다면 성공선이 너무 엄격했을 수 있다. 타인을 늘려서 확인했다. 타인 사진은 공개 얼굴 데이터셋 LFW(연구용, 대부분 서양 유명인)에서 가져왔다.
+
+**① 실제 사진 타인 500명 vs 내 사진 4장 (FaceNet, 2000쌍)**
+
+| | 값 | 타인 쌍 중 이보다 높은 비율 |
+|---|---|---|
+| 타인 분포 | 평균 0.007, 50% 0.004, 95% 0.238, 99% 0.350, 최대 0.483 | - |
+| 기존 타인 (target_specific1) | 0.044 | 37.8% (평범한 남) |
+| 기존 성공선 | 0.365 | 0.9% |
+| FaceID ensemble 평균 | 0.438 | 0.35% |
+
+- 나와 가장 비슷한 타인 10명 중 동양인 이름이 2명(0.376, 0.363). LFW에는 동양인이 적어서 ②에서 따로 넣었다.
+
+**② FaceID가 타인을 그린 이미지 vs 내 사진** (같은 프롬프트, 생성 seed 0 ~ 2)
+- 타인: LFW 무작위 16명 + 비교적 젊은 동양인 남성 8명 (사진을 보고 고름)
+- 잣대를 맞추려고 모든 생성 이미지를 **내 사진 4장 평균**과 비교했다 (그래서 아래 FaceNet 값은 7절 표와 조금 다르다)
+
+| 생성 이미지 | ArcFace | FaceNet | FaceNet 0.365 이상 |
+|---|---|---|---|
+| 타인 무작위 (48장) | 0.012 | 0.044 | 0% |
+| 타인 동양인 남성 (24장) | 0.036 | 0.078 | 4% (1장, 0.459) |
+| baseline (보호 안 함) | 0.728* | 0.759 | 100% |
+| pilot (Week 6 보호) | 0.476* | 0.658 | 100% |
+| **ensemble (노이즈 seed 3개)** | **0.062*** | **0.398** | **66%** |
+
+\* 원본 사진 1장과 비교한 값 (Colab 출력)
+
+### 눈금 확인 해석
+- **눈금은 맞았다.** 기존 타인은 평범한 남이었고, 성공선 0.365는 실제 남 100명 중 가장 닮은 1명 수준이다. FaceID가 남을 그려도 0.365를 넘는 경우는 72장 중 1장뿐이었다.
+- **ArcFace 기준으로 ensemble은 남과 구별되지 않는다** (0.062 vs 0.012 ~ 0.036). FaceID가 보는 신원은 완전히 바뀌었다.
+- **FaceNet 기준으로 ensemble은 남보다 확실히 나를 닮았다** (0.398 vs 0.044 ~ 0.078). 생성기 특유의 얼굴 때문도 아니고, 인종·성별이 비슷해서도 아니다(동양인 남성 0.078). 0.438이 '부분'이라는 판단은 맞았다.
+- 비슷한 인종·성별이면 점수가 조금 오른다(ArcFace 0.012 → 0.036, FaceNet 0.044 → 0.078). 하지만 그 차이는 ensemble과의 차이보다 훨씬 작다.
+- 즉 **노이즈는 ArcFace가 보는 신원은 지웠지만, FaceNet이 보는 나의 흔적은 남겼다.** FaceID가 그린 얼굴에 ArcFace는 놓치고 FaceNet은 잡는 나의 특징이 남아 있다는 뜻이다.
+
+### 최종 Go / No-go: Go
+**판단 근거**
+- 딥페이크 도구가 신원을 읽는 모델(FaceID의 ArcFace)은 완전히 속았다. 보호된 사진으로 만든 딥페이크를 남의 사진으로 만든 딥페이크와 구별하지 못한다 (0.062 vs 0.012 ~ 0.036).
+- 공격에 쓰지 않은 FaceNet에서도 "나"의 범위 밖이다. 0.398은 내 진짜 사진끼리 최소(0.686)보다 한참 아래이고, 보호 안 함(0.759)의 절반 수준이다.
+- 눈으로 봐도 4장 모두 내가 아니다. 딥페이크의 실제 피해는 사람들이 그 이미지를 나라고 믿는 데서 생기므로 가장 중요한 기준이다.
+- SimSwap 보호도 유지된다 (ArcFace 12개 모두 성공, FaceNet 0.340 성공).
+
+**함께 기록하는 한계**
+- FaceNet에는 나의 흔적이 남아 있다 (0.398, FaceID가 남을 그리면 0.04 ~ 0.08). 다른 얼굴 인식 시스템이라면 나와 연결할 가능성이 조금 남는다.
+- 눈으로 본 판단은 본인 1명의 것이다.
+
+**Week 8 개선 후보로 넘김**
+- ensemble에 성격이 다른 얼굴 인식 모델(FaceNet 등)을 추가하고, 채점은 또 다른 독립 모델로 (FaceShield도 여러 모델을 함께 공격)
+- eps를 키우거나 steps를 늘림 (화질과 맞바꿈)
+- 사람 눈 평가: 나를 아는 사람들에게 블라인드 테스트 (원본 생성 결과와 보호 생성 결과를 섞어 보여 주기)
+
 ## 한계
 - 프롬프트 1개, 상반신 장면만 시험했다. 전신처럼 얼굴이 작은 장면은 결과가 다를 수 있다.
 - FaceID의 LoRA는 쓰지 않았다. LoRA를 쓰면 더 닮게 그려질 수 있다.
-- 사진 4장, 본인 1명의 결과다.
+- 사진 4장, 본인 1명의 결과다. 눈으로 본 판단도 본인 1명의 것이다.
 - Ensemble은 노이즈 seed 3개, 생성 seed 3개의 결과다.
 - 노이즈 seed 0의 보호 사진은 seed 1·2를 돌리기 전에 다시 만들어졌다(GPU 계산 차이로 입력 유사도가 0.00x 수준으로 다름). FaceID 생성 seed 0은 첫 번째 버전으로, SimSwap FaceNet 채점은 새 버전으로 했다.
 - Ensemble의 FaceID 정렬 변환(M)은 보호 전 얼굴에서 한 번 구했다. 노이즈 때문에 FaceID가 찾는 5점이 조금 바뀔 수 있지만, EOT 변형(회전·크기·이동)이 이 차이를 덮는다고 가정했다.
@@ -256,6 +309,7 @@ loss = cos(SimSwap ArcFace(x+δ), 원본) + cos(FaceID ArcFace(정렬(x+δ)), �
 - 모델을 공격하려면 모델 파일만 있으면 안 되고, gradient가 흐르는 형태(PyTorch)와 그 모델이 사진을 자르는 방식(정렬)까지 똑같이 따라 해야 한다. 그냥 줄여서 넣었다면 과녁 옆을 겨눴을 것이다.
 - 공격할 모델을 하나 더하면 그 모델은 확실히 막히지만, 같은 노이즈 크기 안에서 힘을 나눠 쓰므로 원래 모델의 여유가 줄어든다.
 - 공격에 쓴 모델로 잰 점수(0.083)와 쓰지 않은 모델로 잰 점수(0.510)는 다르다. 진짜 효과를 말하려면 공격에 쓰지 않은 모델로도 재야 한다.
+- 판정선은 타인을 많이 넣어서 확인해야 한다. 타인 1명으로 정한 선이 이번에는 맞았지만, 그건 확인한 뒤에야 말할 수 있었다. 또 비교 대상과 같은 조건(같은 생성기로 그린 남)의 기준선이 가장 공정하다.
 - 한 번 잘 나온 결과는 운일 수 있다. 공격한 모델 점수는 seed를 바꿔도 같았지만, 공격하지 않은 모델 점수는 seed마다 크게 달랐다(0.325 ~ 0.510). 반복해야 무엇이 안정적인 효과이고 무엇이 덤인지 구별된다.
 
 ## 참고한 코드와 자료
@@ -264,5 +318,6 @@ loss = cos(SimSwap ArcFace(x+δ), 원본) + cos(FaceID ArcFace(정렬(x+δ)), �
 - diffusers IP-Adapter 문서의 FaceID 예시 — 명세서 모양 `(2, 1, 1, 512)`와 `ip_adapter_image_embeds` 사용법
 - insightface: https://github.com/deepinsight/insightface (모델은 비상업 연구 용도)
 - FaceShield: ArcFace 여러 개를 함께 공격 (`docs/papers/FaceShield_summary.md`)
+- LFW (Labeled Faces in the Wild): http://vis-www.cs.umass.edu/lfw/ — funneled 버전, 연구 공개용
 - onnx2torch: https://github.com/ENOT-AutoDL/onnx2torch — onnx 모델을 PyTorch 모델로 변환
 - insightface `face_align.norm_crop`의 112×112 기준 위치(arcface_dst) — FaceID 정렬 따라 하기

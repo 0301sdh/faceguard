@@ -1,0 +1,32 @@
+=== 타인 기준선: LFW 타인 얼굴로 FaceID 생성 → 내 사진 4장과 비교 (FaceNet) ===
+[asian] Yoon_Jin-Sik         | 0.459 0.226 0.075 | 평균 0.253
+[random] Rob_Schneider        | 0.250 0.263 0.207 | 평균 0.240
+[random] DAngelo_Jimenez      | 0.143 0.244 0.160 | 평균 0.182
+[random] Frances_Fisher       | 0.101 0.130 0.267 | 평균 0.166
+[asian] Hidetoshi_Nakata     | 0.141 0.121 0.152 | 평균 0.138
+[asian] Masamori_Tokuyama    | 0.099 0.013 0.275 | 평균 0.129
+[random] Larry_Tanenbaum      | 0.103 0.182 0.042 | 평균 0.109
+[random] Mark_Cuban           | 0.105 0.112 0.100 | 평균 0.106
+[random] Christian_Patino     | 0.132 0.072 0.095 | 평균 0.099
+[random] King_Abdullah_II     | 0.066 0.114 0.091 | 평균 0.091
+[random] Carla_Sullivan       | 0.088 0.095 0.066 | 평균 0.083
+[asian] Kim_Hong-gul         | 0.107 0.104 0.027 | 평균 0.079
+[random] Mike_Montgomery      | 0.116 0.018 0.028 | 평균 0.054
+[asian] Lee_Hyung-taik       | 0.077 0.057 -0.012 | 평균 0.041
+[random] Amy_Redford          | 0.113 -0.019 0.026 | 평균 0.040
+[asian] Jung_Bong            | 0.099 -0.053 0.010 | 평균 0.019
+[random] Thomas_Mesereau_Jr   | 0.053 -0.016 0.011 | 평균 0.016
+[asian] Hideki_Matsui        | -0.067 0.036 0.075 | 평균 0.015
+[random] Nestor_Santillan     | -0.030 0.046 -0.054 | 평균 -0.013
+[random] Matthew_Vaughan      | -0.053 0.007 -0.019 | 평균 -0.022
+[asian] Kim_Dong-hwa         | -0.067 0.005 -0.093 | 평균 -0.052
+[random] Najib_al-Salhi       | -0.057 -0.056 -0.119 | 평균 -0.077
+[random] Betty_Williams       | -0.240 -0.145 -0.149 | 평균 -0.178
+[random] Helen_Alvare         | -0.204 -0.206 -0.182 | 평균 -0.198
+
+=== 같은 잣대 비교: 생성 이미지 vs 내 사진 4장 평균 (FaceNet) ===
+타인 (random)                 48장 | 평균 0.044 | 중앙값 0.066 | 최대 0.267 | 0.365 이상 0%
+타인 (asian)                  24장 | 평균 0.078 | 중앙값 0.075 | 최대 0.459 | 0.365 이상 4%
+baseline (보호 안 함)           12장 | 평균 0.759 | 중앙값 0.767 | 최대 0.804 | 0.365 이상 100%
+pilot (Week 6 보호)           12장 | 평균 0.658 | 중앙값 0.648 | 최대 0.724 | 0.365 이상 100%
+ensemble (seed 0~2)         35장 | 평균 0.398 | 중앙값 0.410 | 최대 0.623 | 0.365 이상 66%
