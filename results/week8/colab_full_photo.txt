@@ -1,0 +1,22 @@
+Week 8 ③④ 사진 전체 보호 (eps 5/255, EOT 변형 4개, steps 30, 노이즈 seed 0, ensemble loss). notebooks/simswap_robustness.ipynb, ipadapter_faceid_eval.ipynb 셀 출력을 옮김
+(노트북은 얼굴 사진 때문에 출력 없이 저장하므로 숫자를 여기에 남긴다)
+
+=== 방식 A: 224 crop에서 노이즈 → 노이즈만 원래 사진에 되돌려 붙이기 (week8/full_eps5_seed0) ===
+person_a_1 3024×4032 | SimSwap 결과 vs 나 -0.022 (성공) | 입력: SimSwap ArcFace -0.065, FaceID ArcFace 0.140 | PSNR 전체 51.9dB, 얼굴 영역 37.6dB | 찾기·정렬 0.8s 노이즈 16.3s 붙이기 1.3s 전체 18.3s
+person_a_2 2316×3088 | SimSwap 결과 vs 나 -0.086 (성공) | 입력: SimSwap ArcFace 0.075, FaceID ArcFace 0.154 | PSNR 전체 41.1dB, 얼굴 영역 37.8dB | 찾기·정렬 0.3s 노이즈 13.3s 붙이기 0.3s 전체 13.9s
+person_a_3 1440×960 | SimSwap 결과 vs 나 -0.038 (성공) | 입력: SimSwap ArcFace 0.017, FaceID ArcFace 0.233 | PSNR 전체 42.1dB, 얼굴 영역 37.4dB | 찾기·정렬 0.3s 노이즈 14.3s 붙이기 0.0s 전체 14.6s
+person_a_4 1440×960 | SimSwap 결과 vs 나 0.017 (성공) | 입력: SimSwap ArcFace -0.017, FaceID ArcFace 0.237 | PSNR 전체 39.3dB, 얼굴 영역 37.2dB | 찾기·정렬 0.4s 노이즈 13.4s 붙이기 0.0s 전체 13.9s
+(첫 장의 시간은 GPU 준비 시간 포함)
+
+=== 방식 B: FaceID 쪽을 사진 전체 경로로 따라 함 (week8/full_b_eps5_seed0) ===
+person_a_1 | SimSwap 결과 vs 나 0.014 (성공) | 입력: SimSwap ArcFace -0.036, FaceID ArcFace 0.164 | 가정 vs 실제 0.933 | PSNR 전체 52.1dB, 얼굴 영역 37.7dB | 찾기·정렬 0.7s 노이즈 13.2s 붙이기 0.5s 전체 14.3s
+person_a_2 | SimSwap 결과 vs 나 -0.098 (성공) | 입력: SimSwap ArcFace 0.033, FaceID ArcFace 0.167 | 가정 vs 실제 0.835 | PSNR 전체 41.2dB, 얼굴 영역 38.0dB | 찾기·정렬 0.7s 노이즈 13.7s 붙이기 0.3s 전체 14.6s
+person_a_3 | SimSwap 결과 vs 나 -0.038 (성공) | 입력: SimSwap ArcFace -0.008, FaceID ArcFace 0.181 | 가정 vs 실제 0.984 | PSNR 전체 42.3dB, 얼굴 영역 37.6dB | 찾기·정렬 0.7s 노이즈 13.3s 붙이기 0.1s 전체 14.1s
+person_a_4 | SimSwap 결과 vs 나 -0.015 (성공) | 입력: SimSwap ArcFace -0.045, FaceID ArcFace 0.100 | 가정 vs 실제 0.947 | PSNR 전체 39.4dB, 얼굴 영역 37.3dB | 찾기·정렬 0.7s 노이즈 13.2s 붙이기 0.0s 전체 13.9s
+
+=== FaceID 생성 (insightface ArcFace, 생성 seed 0/1/2) ===
+w8_full_eps0 (보호 안 한 사진 전체): a_1 0.764 / a_2 0.714 / a_3 0.766 / a_4 0.749 | 4장 평균 0.748 (실패)
+w8_full_eps5_seed0 (방식 A): a_1 0.123 / a_2 0.172 / a_3 0.259 / a_4 0.237 | 4장 평균 0.198 (성공)
+  seed별: a_1 0.110 0.130 0.128 | a_2 0.222 0.146 0.148 | a_3 0.290 0.271 0.215 | a_4 0.353 0.104 0.253
+w8_full_b_eps5_seed0 (방식 B): a_1 0.216 / a_2 0.239 / a_3 0.341 / a_4 0.254 | 4장 평균 0.263 (부분)
+  seed별: a_1 0.256 0.208 0.186 | a_2 0.260 0.254 0.203 | a_3 0.371 0.375 0.276 | a_4 0.263 0.233 0.265
