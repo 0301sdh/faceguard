@@ -18,8 +18,8 @@
 | `week7/facenet_calibration_lfw.txt` | FaceNet 눈금 다시 잡기: LFW 타인 500명 vs 내 사진 4장 유사도 분포 | `experiments/week7_facenet_calibration.py` |
 | `week7/facenet_stranger_gen.txt` | FaceID가 LFW 타인 24명을 그린 이미지 vs 내 사진 (FaceNet) + baseline·pilot·ensemble을 같은 잣대(내 사진 4장 평균)로 | `experiments/week7_facenet_stranger_gen.py` |
 | `week7/arcface_colab.txt` | FaceID 눈금 잡기, baseline, pilot, ensemble 준비·공격·생성의 insightface ArcFace 점수 | `notebooks/ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
-| `week8/colab_full_photo.txt` | 사진 전체 보호 방식 A·B: SimSwap·FaceID ArcFace 점수, 처리 시간, PSNR | `notebooks/simswap_robustness.ipynb`, `ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
-| `week8/facenet_full_photo.txt` | 사진 전체 보호 방식 A·B로 FaceID가 생성한 이미지의 FaceNet 유사도 | `experiments/week7_facenet_eval.py` |
+| `week8/colab_full_photo.txt` | 사진 전체 보호 방식 A·B·C: SimSwap·FaceID ArcFace 점수, 처리 시간, PSNR | `notebooks/simswap_robustness.ipynb`, `ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
+| `week8/facenet_full_photo.txt` | 사진 전체 보호 방식 A·B·C로 FaceID가 생성한 이미지의 FaceNet 유사도 | `experiments/week7_facenet_eval.py` |
 
 - FaceNet 채점에는 무작위 요소가 없어서, 같은 합성 결과를 다시 채점하면 같은 숫자가 나온다.
 - ArcFace 점수는 Colab 노트북(`notebooks/simswap_eval.ipynb`, `notebooks/simswap_robustness.ipynb`)의 셀 출력에 남아 있다.
