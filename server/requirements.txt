@@ -1,0 +1,9 @@
+# FaceGuard AI 서버 (Week 9)
+torch
+numpy
+opencv-python-headless
+scikit-image
+onnx
+onnx2torch
+onnxruntime
+insightface
