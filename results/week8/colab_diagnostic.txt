@@ -1,0 +1,19 @@
+Week 8 ③ 진단: 원본 사진에서 찾은 정렬 vs 보호 사진에서 다시 찾은 정렬. notebooks/simswap_robustness.ipynb [Week 8 ③ 진단] 셀 출력을 옮김
+어긋남 = crop 안의 점이 평균 몇 픽셀 옮겨졌나 (SimSwap 224, FaceID 112 기준)
+전달률 = 우리가 넣은 노이즈(원본 정렬로 자름)와 모델이 실제로 보는 노이즈(다시 찾은 정렬로 자름)의 상관계수
+
+[A ] person_a_1 3024×4032 | SimSwap 어긋남 0.66px, 전달률 0.81 | FaceID 어긋남 0.36px, 전달률 0.86
+[A ] person_a_2 2316×3088 | SimSwap 어긋남 1.03px, 전달률 0.62 | FaceID 어긋남 0.53px, 전달률 0.72
+[A ] person_a_3 1440×960 | SimSwap 어긋남 0.35px, 전달률 0.93 | FaceID 어긋남 0.19px, 전달률 0.94
+[A ] person_a_4 1440×960 | SimSwap 어긋남 0.25px, 전달률 0.96 | FaceID 어긋남 0.13px, 전달률 0.97
+[C ] person_a_1 1016×1354 | SimSwap 어긋남 0.65px, 전달률 0.86 | FaceID 어긋남 0.34px, 전달률 0.88
+[C ] person_a_2 282×376 | SimSwap 어긋남 1.70px, 전달률 0.55 | FaceID 어긋남 0.90px, 전달률 0.59
+[C ] person_a_3 473×315 | SimSwap 어긋남 0.42px, 전달률 0.93 | FaceID 어긋남 0.22px, 전달률 0.94
+[C ] person_a_4 312×208 | SimSwap 어긋남 0.59px, 전달률 0.91 | FaceID 어긋남 0.33px, 전달률 0.91
+[C'] person_a_1 1016×1354 | SimSwap 어긋남 0.65px, 전달률 0.86 | FaceID 어긋남 0.34px, 전달률 0.88
+[C'] person_a_2 768×1024 | SimSwap 어긋남 1.48px, 전달률 0.53 | FaceID 어긋남 0.78px, 전달률 0.59
+[C'] person_a_3 1024×683 | SimSwap 어긋남 0.50px, 전달률 0.89 | FaceID 어긋남 0.28px, 전달률 0.91
+[C'] person_a_4 1024×683 | SimSwap 어긋남 0.32px, 전달률 0.96 | FaceID 어긋남 0.18px, 전달률 0.96
+
+해석: 어긋남은 모두 2픽셀 미만(EOT 범위 안)이고, 전달률은 A와 C가 비슷하다(a_4는 A가 더 높음).
+그런데 FaceID 결과는 C가 훨씬 좋다 → "노이즈가 뭉개짐", "위치가 어긋남" 둘 다 A가 약한 이유가 아니다.

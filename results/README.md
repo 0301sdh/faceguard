@@ -20,6 +20,7 @@
 | `week7/arcface_colab.txt` | FaceID 눈금 잡기, baseline, pilot, ensemble 준비·공격·생성의 insightface ArcFace 점수 | `notebooks/ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
 | `week8/colab_full_photo.txt` | 사진 전체 보호 방식 A·B·C·C': SimSwap·FaceID ArcFace 점수, 처리 시간, PSNR | `notebooks/simswap_robustness.ipynb`, `ipadapter_faceid_eval.ipynb` 셀 출력을 옮김 |
 | `week8/facenet_full_photo.txt` | 사진 전체 보호 방식 A·B·C·C'로 FaceID가 생성한 이미지의 FaceNet 유사도 | `experiments/week7_facenet_eval.py` |
+| `week8/colab_diagnostic.txt` | 진단: 정렬 어긋남과 노이즈 전달률 (방식 A·C·C') | `notebooks/simswap_robustness.ipynb` 셀 출력을 옮김 |
 
 - FaceNet 채점에는 무작위 요소가 없어서, 같은 합성 결과를 다시 채점하면 같은 숫자가 나온다.
 - ArcFace 점수는 Colab 노트북(`notebooks/simswap_eval.ipynb`, `notebooks/simswap_robustness.ipynb`)의 셀 출력에 남아 있다.
