@@ -1,0 +1,14 @@
+Week 9 ① Mac에서 server/protect.py 처리 시간. server/try_local.py (사진마다 seed 0)
+Mac: Apple Silicon, torch 2.14, insightface 2.1, PYTORCH_ENABLE_MPS_FALLBACK=1
+
+device mps (Mac GPU)
+person_a_1 3024×4032 → 1016×1354 | detect 0.3s noise 55.9s paste 0.1s total 56.3s
+person_a_3 1440×960 → 1024×683 | detect 0.3s noise 55.1s paste 0.0s total 55.5s
+  보호 확인 (입력 신원, 원본 vs 보호): a_1 SimSwap -0.220, FaceID 0.022 | a_3 SimSwap 0.198, FaceID 0.194
+
+device cpu
+person_a_1 3024×4032 → 1016×1354 | detect 0.3s noise 35.7s paste 0.0s total 36.0s
+
+비교: Colab T4 약 16 ~ 17초 (results/week9/colab_server_check.txt)
+해석: Mac에서도 보호 효과는 나온다. Mac GPU(mps)가 CPU보다 느리다(지원하지 않는 연산을 CPU로 넘기며 오가는 비용으로 추정, 확인 안 함).
+결정: 개발은 Mac CPU(사진 1장 약 36초)로 한다. 실제 배포는 GPU 서버가 필요하다.

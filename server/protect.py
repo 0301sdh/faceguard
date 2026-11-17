@@ -50,11 +50,8 @@ ARCFACE_DST = np.array([[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.736
 
 
 def pick_device():
-    if torch.cuda.is_available():
-        return 'cuda'
-    if torch.backends.mps.is_available():
-        return 'mps'
-    return 'cpu'
+    # Mac GPU(mps)는 재 보니 CPU보다 느렸다 (56초 vs 36초, results/week9/local_speed.txt) → 쓰지 않음
+    return 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def simswap_matrix(kps, size=CROP):

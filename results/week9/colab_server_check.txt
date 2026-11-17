@@ -1,0 +1,12 @@
+Week 9 ① server/protect.py 확인 (Colab T4). notebooks/server_check.ipynb 셀 출력을 옮김
+Week 8 노트북의 방식 C' 결과(week8/full_cmin_eps5_seed0)와 비교. 괄호 안은 노트북 출력
+
+device: cuda
+person_a_1 1016×1354 | 노트북 결과와 같은 정도 64.2dB (최대 차이 6) | 입력: SimSwap ArcFace -0.175 (노트북 -0.173), FaceID ArcFace -0.003 (노트북 -0.006) | detect 1.0s noise 19.7s paste 0.1s total 20.8s
+person_a_2 768×1024 | 노트북 결과와 같은 정도 52.3dB (최대 차이 9) | 입력: SimSwap ArcFace -0.029 (노트북 -0.031), FaceID ArcFace -0.039 (노트북 -0.039) | detect 0.9s noise 15.6s paste 0.0s total 16.5s
+person_a_3 1024×683 | 노트북 결과와 같은 정도 54.7dB (최대 차이 8) | 입력: SimSwap ArcFace 0.049 (노트북 0.066), FaceID ArcFace 0.197 (노트북 0.204) | detect 0.9s noise 16.1s paste 0.0s total 17.0s
+person_a_4 1024×683 | 노트북 결과와 같은 정도 52.6dB (최대 차이 7) | 입력: SimSwap ArcFace 0.046 (노트북 0.040), FaceID ArcFace 0.226 (노트북 0.227) | detect 0.9s noise 15.7s paste 0.0s total 16.6s
+
+해석: 노트북과 52 ~ 64dB로 사실상 같은 사진, 입력 신원 차이 0.02 이내 → 옮기기 성공.
+차이는 GPU 계산의 미세한 비결정성과 insightface 버전(0.2.1 → 최신) 차이로 본다.
+노이즈 시간은 15.6 ~ 19.7s로 노트북(약 13s)보다 느리다. SimSwap ArcFace를 onnx2torch로 바꾼 영향으로 추정 (첫 장은 GPU 준비 포함).
