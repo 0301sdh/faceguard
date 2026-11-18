@@ -1,0 +1,24 @@
+Week 9 ② FastAPI 서버 (server/app.py) 시험. Mac CPU, uvicorn, 127.0.0.1:8000
+
+정상 요청: curl -F "photo=@data/person_a_1.jpg" http://127.0.0.1:8000/protect
+  200 OK, image/png, 1016×1354, 처리 37.3초 (요청 전체 37.4초)
+  보호 확인 (입력 신원): 보호 안 함 SimSwap 0.970 / FaceID 1.000 → 서버 결과 SimSwap -0.175 / FaceID -0.042
+  서버 결과 vs server/try_local.py (CPU, seed 0): 완전히 같음 (최대 차이 0)
+
+오류 요청:
+  사진이 아닌 파일 (텍스트)  → 400 {"detail":"사진 파일이 아닙니다"}
+  얼굴 없는 사진 (회색 800×600) → 422 {"detail":"얼굴을 찾지 못했습니다"}
+  21MB 파일                  → 413 {"detail":"파일이 너무 큽니다 (최대 20MB)"}
+  파일 없이 요청              → 422 (FastAPI 기본 검사: photo 필드 없음)
+
+GET /health → {"status":"ok","device":"cpu"}
+
+=== Docker (faceguard-ai 이미지, python:3.14-slim, CPU 전용 torch, 2.51GB) ===
+실행: docker run -p 8000:8000 -v "$PWD/models:/app/models" faceguard-ai
+첫 실행 실패: ImportError libxcb.so.1 → insightface가 화면용 opencv-python을 함께 설치해 headless를 덮어씀 → Dockerfile에서 화면용 제거 후 해결
+정상 요청 (person_a_1): 200 OK, 1016×1354, 처리 86.3초
+  보호 확인 (입력 신원): SimSwap -0.180 / FaceID -0.040
+  Docker 결과 vs Mac 서버 결과: 63.8dB (최대 차이 7) → 사실상 같음
+얼굴 없는 사진 → 422 {"detail":"얼굴을 찾지 못했습니다"}
+속도: Mac에서 바로 실행(37초)보다 2배 이상 느림. Docker는 Mac 안의 리눅스 가상 컴퓨터에서 돈다 (CPU 8개, 메모리 8GB로 Mac과 CPU 수는 같음).
+      리눅스용 torch가 Mac 전용 계산 가속(Accelerate)을 쓰지 못하는 것으로 추정 (확인 안 함). 배포는 GPU 서버에서 한다

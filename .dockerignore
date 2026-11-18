@@ -1,0 +1,12 @@
+# 이미지에는 server/ 코드만 넣는다. 사진·모델·실험 기록은 제외
+.git
+.venv
+.idea
+data
+models
+notebooks
+results
+docs
+experiments
+FaceGuard_Project_Context.md
+**/__pycache__

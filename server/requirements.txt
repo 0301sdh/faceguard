@@ -1,9 +1,12 @@
-# FaceGuard AI 서버 (Week 9)
-torch
-numpy
-opencv-python-headless
-scikit-image
-onnx
-onnx2torch
-onnxruntime
-insightface
+# FaceGuard AI 서버 (Week 9). Mac에서 돌아가는 것을 확인한 버전으로 고정
+torch==2.14.0
+numpy==2.5.3
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+onnx==1.23.2
+onnx2torch==1.5.15
+onnxruntime==1.32.0
+insightface==2.1
+fastapi==0.163.2
+uvicorn==0.54.0
+python-multipart==0.0.34
