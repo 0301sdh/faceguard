@@ -1,0 +1,30 @@
+Week 10 Spring Boot 백엔드 (backend/, Spring Boot 4.1.2, Java 17, H2 파일 DB) 시험
+AI 서버: Mac uvicorn (127.0.0.1:8000, CPU). 백엔드: java -jar (127.0.0.1:8080)
+
+=== 정상 흐름 (person_a_1.jpg) ===
+1) POST /api/images (file)               → 201 {"id":1,"kind":"ORIGINAL","contentType":"image/jpeg","sizeBytes":2618751,...}
+2) POST /api/protection-jobs {"imageId":1} → 201 {"id":1,"status":"DONE","protectedImageId":2,"aiSeconds":38.5,...} (요청 전체 38.7초)
+3) GET  /api/protection-jobs/1            → 200 같은 작업 정보
+4) GET  /api/images/2                     → 200 image/png 1016×1354, 파일 이름 person_a_1_protected.png
+   Week 9 AI 서버를 직접 부른 결과(data/week9/api/person_a_1.png)와 바이트까지 같음
+
+=== 오류 ===
+사진이 아닌 파일 (텍스트)          → 415 {"error":"JPEG, PNG, WEBP 사진만 올릴 수 있습니다"}
+file 필드 없이 업로드              → 400 {"error":"사진 파일(file)이 없습니다"}
+21MB 파일                         → 413 {"error":"파일이 너무 큽니다 (최대 20MB)"}
+얼굴 없는 사진 (업로드는 성공)      → 작업 201, status FAILED, errorMessage "얼굴을 찾지 못했습니다" (AI 서버 422)
+없는 사진 번호로 작업              → 404 {"error":"사진을 찾을 수 없습니다: 999"}
+imageId 빠짐                      → 400 {"error":"imageId: 보호할 사진 번호가 필요합니다"}
+보호된 사진을 다시 보호            → 400 {"error":"이미 보호된 사진입니다: 2"}
+없는 작업 조회                     → 404 {"error":"작업을 찾을 수 없습니다: 999"}
+AI 서버가 꺼진 상태에서 작업        → 작업 201, status FAILED, errorMessage "AI 서버에 연결할 수 없거나 응답이 너무 늦습니다"
+
+./mvnw test → 통과 (contextLoads)
+
+=== 보안 설정 (server.address=127.0.0.1) ===
+127.0.0.1:8080 → 200 / Mac 와이파이 주소(192.168.x.x):8080 → 연결 안 됨 (같은 와이파이의 다른 기기에서 접속 불가)
+
+=== Swagger UI (springdoc-openapi 3.2.0) ===
+http://localhost:8080/swagger-ui.html 에서 POST /api/protection-jobs {"imageId":1} 실행 → 201 DONE, aiSeconds 40.4
+POST /api/images 는 파일 선택 칸으로 나옴 (multipart, format binary)
+./mvnw spring-boot:run 으로 켜지는 것 확인

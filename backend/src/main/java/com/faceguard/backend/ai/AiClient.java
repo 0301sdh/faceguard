@@ -1,0 +1,67 @@
+package com.faceguard.backend.ai;
+
+import java.nio.file.Path;
+import java.time.Duration;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
+
+/** AI 서버(FastAPI, Week 9)의 POST /protect 를 부른다. */
+@Component
+public class AiClient {
+
+    private final RestClient client;
+
+    public AiClient(@Value("${faceguard.ai-server-url}") String baseUrl,
+                    @Value("${faceguard.ai-timeout-seconds}") long timeoutSeconds) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(timeoutSeconds));   // 노이즈 계산이 오래 걸림
+        this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+    }
+
+    /** 사진 파일 → 보호된 사진(PNG). 실패하면 사용자에게 보여 줄 메시지를 담은 AiException */
+    public AiResult protect(Path photo) {
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("photo", new FileSystemResource(photo));   // AI 서버의 필드 이름과 같아야 함
+        try {
+            ResponseEntity<byte[]> response = client.post().uri("/protect")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(parts)
+                    .retrieve()
+                    .toEntity(byte[].class);
+            String seconds = response.getHeaders().getFirst("X-Processing-Seconds");
+            return new AiResult(response.getBody(), seconds == null ? null : Double.valueOf(seconds));
+        } catch (RestClientResponseException e) {
+            // AI 서버가 답은 했지만 실패 (400 사진 아님, 413 너무 큼, 422 얼굴 없음, 500 내부 오류)
+            String message = switch (e.getStatusCode().value()) {
+                case 422 -> "얼굴을 찾지 못했습니다";
+                case 400 -> "AI 서버가 사진을 읽지 못했습니다";
+                case 413 -> "사진이 너무 큽니다";
+                default -> "AI 서버 오류 (" + e.getStatusCode().value() + ")";
+            };
+            throw new AiException(message);
+        } catch (ResourceAccessException e) {
+            // 연결 실패 또는 시간 초과
+            throw new AiException("AI 서버에 연결할 수 없거나 응답이 너무 늦습니다");
+        }
+    }
+
+    public record AiResult(byte[] png, Double processingSeconds) {
+    }
+
+    public static class AiException extends RuntimeException {
+        public AiException(String message) {
+            super(message);
+        }
+    }
+}
