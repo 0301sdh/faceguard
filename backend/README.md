@@ -29,7 +29,9 @@ http://127.0.0.1:8000/health 에서 `{"status":"ok"}`가 나오면 준비된 것
 ```
 `Started BackendApplication` 줄이 나오면 준비된 것이다.
 
-**3. 써 보기**: 브라우저에서 http://localhost:8080/swagger-ui.html
+**3. 써 보기**: 브라우저에서 http://localhost:8080 → 사진 고르기 → 보호하기 → 진행률이 100%가 되면 내려받기
+
+API를 하나씩 시험하려면 http://localhost:8080/swagger-ui.html
 1. **사진** → `POST /api/images` → Try it out → 사진 선택 → Execute → 응답의 `id` 확인
 2. **보호 작업** → `POST /api/protection-jobs` → Try it out → `{"imageId": (1의 id)}` → Execute → 바로 작업 번호(`id`)와 `QUEUED`가 나옴
 3. `GET /api/protection-jobs/{id}`에 작업 번호를 넣고 Execute. 40 ~ 90초 뒤 다시 누르면 `DONE`
@@ -44,7 +46,7 @@ http://127.0.0.1:8000/health 에서 `{"status":"ok"}`가 나오면 준비된 것
 |---|---|
 | `POST /api/images` (form-data `file`) | 사진 올리기 → 사진 번호. JPEG, PNG, WEBP, 최대 20MB |
 | `POST /api/protection-jobs` `{"imageId": 1}` | 보호 작업 접수(202). 작업 번호를 바로 돌려주고 뒤에서 한 장씩 처리 |
-| `GET /api/protection-jobs/{id}` | 작업 상태 (QUEUED → PROCESSING → DONE / FAILED), 실패 이유, 시도 횟수 |
+| `GET /api/protection-jobs/{id}` | 작업 상태 (QUEUED → PROCESSING → DONE / FAILED), 진행률 `progress`(0 ~ 100, 모르면 null), 실패 이유, 시도 횟수 |
 | `GET /api/images/{id}` | 사진 파일 (원본 또는 보호된 사진) |
 | `GET /api/images/{id}/info` | 사진 정보 |
 

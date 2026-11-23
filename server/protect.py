@@ -152,10 +152,10 @@ class FaceGuard:
         return F.grid_sample(x, grid, mode='bilinear', padding_mode='border', align_corners=False)
 
     # ---------- 노이즈 (Week 7 ensemble) ----------
-    def attack(self, face, M_fid, epsilon=EPS, steps=STEPS, n_samples=N_SAMPLES):
+    def attack(self, face, M_fid, epsilon=EPS, steps=STEPS, n_samples=N_SAMPLES, on_progress=None):
         alpha = 2.5 * epsilon / steps
         adv = (face + torch.empty_like(face).uniform_(-epsilon, epsilon)).clamp(0, 1).detach()
-        for _ in range(steps):
+        for step in range(steps):
             adv = adv.detach().requires_grad_(True)
             sims_sw, sims_fid = [], []
             for k in range(n_samples):
@@ -172,6 +172,8 @@ class FaceGuard:
             grad, = torch.autograd.grad(loss, adv)
             adv = adv - alpha * grad.sign()
             adv = torch.clamp(face + torch.clamp(adv - face, -epsilon, epsilon), 0, 1)
+            if on_progress is not None:
+                on_progress(step + 1, steps)   # 알리기만 함. 계산과 난수에는 영향 없음
         return adv.detach()
 
     # ---------- 전체 ----------
@@ -191,10 +193,11 @@ class FaceGuard:
         rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         return torch.from_numpy(rgb).permute(2, 0, 1).float().div(255)[None].to(self.device)
 
-    def protect(self, photo_bgr, seed=0):
+    def protect(self, photo_bgr, seed=0, on_progress=None):
         """사진 전체(BGR uint8) → (보호된 사진, 정보). 얼굴을 못 찾으면 (None, 정보).
 
         seed=None 이면 난수를 다시 정하지 않는다 (노트북처럼 여러 장을 이어서 재현할 때).
+        on_progress(끝난 반복 수, 전체 반복 수): 노이즈를 한 번 고칠 때마다 불린다 (진행률 표시용).
         """
         if seed is not None:
             random.seed(seed)
@@ -210,7 +213,7 @@ class FaceGuard:
         t1 = time.time()
 
         face = self.to_tensor(crop)
-        adv = self.attack(face, M_fid)
+        adv = self.attack(face, M_fid, on_progress=on_progress)
         if self.device == 'cuda':
             torch.cuda.synchronize()
         t2 = time.time()

@@ -66,6 +66,11 @@ public class ProtectionJob {
         this.attempts++;
     }
 
+    /** AI 서버에 진행률을 물어볼 때 쓰는 이름. 시도마다 달라서 이전 시도의 진행률과 섞이지 않는다 */
+    public String progressId() {
+        return id + "-" + attempts;
+    }
+
     public void requeue() {
         this.status = JobStatus.QUEUED;
     }

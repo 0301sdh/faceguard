@@ -35,13 +35,14 @@ public class ProtectionJobController {
         ProtectionJob job = service.create(request.imageId());
         return ResponseEntity.accepted()
                 .location(URI.create("/api/protection-jobs/" + job.getId()))
-                .body(JobResponse.from(job));
+                .body(JobResponse.from(job, 0));
     }
 
     /** 작업 상태와 결과 확인 */
-    @Operation(summary = "작업 상태 확인")
+    @Operation(summary = "작업 상태 확인", description = "progress는 진행률(0 ~ 100). 아직 모르면 null")
     @GetMapping("/{id}")
     public JobResponse get(@PathVariable Long id) {
-        return JobResponse.from(service.get(id));
+        ProtectionJob job = service.get(id);
+        return JobResponse.from(job, service.progressOf(job));
     }
 }

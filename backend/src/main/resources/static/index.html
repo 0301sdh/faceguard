@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FaceGuard</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f6f5; --card: #ffffff; --text: #16211d; --muted: #5a6863; --line: #d5ddd9;
+    --accent: #0b6b50; --accent-text: #ffffff; --error: #a62b1f; --error-bg: #fbeae8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101614; --card: #18211e; --text: #e6eeea; --muted: #9aaaa3; --line: #2e3a35;
+      --accent: #4cc39b; --accent-text: #06251b; --error: #ff9d92; --error-bg: #33201d;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
+         font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { margin: 0; font-size: 1.75rem; letter-spacing: -0.02em; }
+  .lead { margin: 4px 0 24px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 10px; padding: 32px 16px; text-align: center; cursor: pointer; }
+  .drop.over, .drop:hover { border-color: var(--accent); }
+  .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .small { color: var(--muted); font-size: 0.875rem; margin: 0; overflow-wrap: anywhere; }
+  .button { display: inline-block; border: 0; border-radius: 8px; padding: 12px 20px; font: inherit; font-weight: 600;
+            background: var(--accent); color: var(--accent-text); cursor: pointer; text-decoration: none; }
+  .button:disabled { opacity: 0.45; cursor: default; }
+  .button.plain { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .status { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+  .percent { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .track { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--accent); transition: width 0.4s linear; }
+  @media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+  .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; min-width: 0; }
+  figure img { width: 100%; height: 320px; object-fit: contain; background: var(--bg); border-radius: 8px; display: block; }
+  figcaption { font-size: 0.875rem; color: var(--muted); margin-top: 4px; text-align: center; }
+  #preview { max-width: 100%; max-height: 280px; border-radius: 8px; display: block; margin: 0 auto 8px; }
+  .error { background: var(--error-bg); color: var(--error); border-radius: 8px; padding: 12px 16px; margin: 16px 0 0; }
+  @media (max-width: 480px) { figure img { height: 200px; } .card { padding: 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>FaceGuard</h1>
+  <p class="lead">얼굴 사진에 눈에 거의 안 보이는 노이즈를 넣어, 딥페이크가 내 얼굴을 따라 하기 어렵게 합니다.</p>
+
+  <section class="card" id="uploadCard">
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp">
+      <img id="preview" alt="고른 사진 미리 보기" hidden>
+      <span id="dropText">사진을 끌어다 놓거나 눌러서 고르세요</span>
+      <p class="small">JPEG, PNG, WEBP / 최대 20MB</p>
+    </label>
+    <div class="actions"><button class="button" id="start" type="button" disabled>보호하기</button></div>
+    <p class="error" id="uploadError" role="alert" hidden></p>
+  </section>
+
+  <section class="card" id="progressCard" hidden>
+    <div class="status"><span id="statusText" aria-live="polite">대기 중</span><span class="percent" id="percent">0%</span></div>
+    <div class="track" id="track" role="progressbar" aria-label="보호 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill" id="fill"></div></div>
+    <p class="small" id="note" style="margin-top:8px"></p>
+    <p class="error" id="jobError" role="alert" hidden></p>
+    <div class="actions" id="retryActions" hidden><button class="button plain" type="button" data-reset>다른 사진 고르기</button></div>
+  </section>
+
+  <section class="card" id="resultCard" hidden>
+    <div class="photos">
+      <figure><img id="before" alt="원본 사진"><figcaption>원본</figcaption></figure>
+      <figure><img id="after" alt="보호된 사진"><figcaption>보호된 사진</figcaption></figure>
+    </div>
+    <div class="actions">
+      <a class="button" id="download" download>보호된 사진 내려받기</a>
+      <button class="button plain" type="button" data-reset>다른 사진 보호하기</button>
+    </div>
+    <p class="small" style="margin-top:16px">두 사진이 거의 같아 보이는 것이 정상입니다. 큰 사진은 크기가 줄어듭니다. JPEG로 다시 저장하면 효과가 약해질 수 있고, 모든 딥페이크를 막지는 못합니다.</p>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const MAX_BYTES = 20 * 1024 * 1024;
+  const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  let photo = null, previewUrl = null, run = 0, shown = 0;   // run: 다른 사진을 고르면 이전 작업의 조회를 멈추게 하는 번호
+
+  async function call(url, options) {
+    const res = await fetch(url, options);
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(body.error || '서버 오류 (' + res.status + ')');
+      error.status = res.status;
+      throw error;
+    }
+    return body;
+  }
+
+  function showError(id, message) {
+    $(id).textContent = message || '';
+    $(id).hidden = !message;
+  }
+
+  function setPercent(value) {
+    shown = value;
+    $('percent').textContent = value + '%';
+    $('fill').style.width = value + '%';
+    $('track').setAttribute('aria-valuenow', value);
+  }
+
+  function choose(file) {
+    showError('uploadError', '');
+    if (!file) return;
+    if (!TYPES.includes(file.type)) return showError('uploadError', 'JPEG, PNG, WEBP 사진만 올릴 수 있습니다');
+    if (file.size > MAX_BYTES) return showError('uploadError', '파일이 너무 큽니다 (최대 20MB)');
+    photo = file;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    $('preview').src = previewUrl;
+    $('preview').hidden = false;
+    $('dropText').textContent = file.name;
+    $('start').disabled = false;
+  }
+
+  function reset() {
+    run++;
+    photo = null;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    $('file').value = '';
+    $('preview').removeAttribute('src');
+    $('preview').hidden = true;
+    $('dropText').textContent = '사진을 끌어다 놓거나 눌러서 고르세요';
+    $('start').disabled = true;
+    showError('uploadError', '');
+    $('uploadCard').hidden = false;
+    $('progressCard').hidden = true;
+    $('resultCard').hidden = true;
+    history.replaceState(null, '', location.pathname);
+  }
+
+  function showProgressCard() {
+    $('uploadCard').hidden = true;
+    $('resultCard').hidden = true;
+    $('progressCard').hidden = false;
+    $('retryActions').hidden = true;
+    showError('jobError', '');
+    $('note').textContent = '';
+    $('statusText').textContent = '대기 중';
+    setPercent(0);
+  }
+
+  function fail(message) {
+    $('statusText').textContent = '실패';
+    $('note').textContent = '';
+    showError('jobError', message);
+    $('retryActions').hidden = false;
+  }
+
+  async function start() {
+    const mine = ++run;
+    $('start').disabled = true;
+    showError('uploadError', '');
+    try {
+      const form = new FormData();
+      form.append('file', photo);
+      const image = await call('/api/images', { method: 'POST', body: form });
+      const job = await call('/api/protection-jobs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageId: image.id }) });
+      if (mine !== run) return;
+      history.replaceState(null, '', '#job=' + job.id);   // 새로고침해도 이어서 보이게
+      follow(job.id, mine);
+    } catch (e) {
+      if (mine !== run) return;
+      showError('uploadError', e.status ? e.message : '서버에 연결할 수 없습니다. Spring Boot가 켜져 있는지 확인하세요');
+      $('start').disabled = false;
+    }
+  }
+
+  // 1초마다 작업 상태를 물어본다 (응답을 받은 다음에 다시 물어봐서, 늦어져도 요청이 쌓이지 않음)
+  async function follow(jobId, mine) {
+    showProgressCard();
+    let attempts = 0, note = '';
+    while (mine === run) {
+      try {
+        const job = await call('/api/protection-jobs/' + jobId);
+        if (mine !== run) return;
+        if (job.status === 'DONE') return finish(job);
+        if (job.status === 'FAILED') return fail(job.errorMessage || '처리하지 못했습니다');
+        $('statusText').textContent = job.status === 'QUEUED' ? '대기 중' : '노이즈를 넣는 중';
+        if (job.attempts > attempts) {          // 다시 시도하면 처음부터 계산하므로 0%로 돌아감
+          if (attempts > 0) note = '중간에 끊겨서 처음부터 다시 계산합니다';
+          attempts = job.attempts;
+          setPercent(0);
+        }
+        $('note').textContent = note;
+        if (job.progress !== null) setPercent(Math.max(shown, job.progress));   // null = 아직 모름 → 그대로
+      } catch (e) {
+        if (mine !== run) return;
+        if (e.status === 404) return fail(e.message);
+        $('note').textContent = '서버와 연결이 끊겼습니다. 다시 확인하는 중입니다';
+      }
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  function finish(job) {
+    setPercent(100);
+    $('note').textContent = '';
+    $('statusText').textContent = '완료';
+    $('before').src = '/api/images/' + job.originalImageId;
+    $('after').src = job.protectedImageUrl;
+    $('download').href = job.protectedImageUrl;
+    $('resultCard').hidden = false;
+  }
+
+  $('file').addEventListener('change', e => choose(e.target.files[0]));
+  $('start').addEventListener('click', start);
+  document.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', reset));
+  const drop = $('drop');
+  ['dragover', 'dragleave', 'drop'].forEach(type => drop.addEventListener(type, e => {
+    e.preventDefault();
+    drop.classList.toggle('over', type === 'dragover');
+    if (type === 'drop') choose(e.dataTransfer.files[0]);
+  }));
+
+  const resumed = /^#job=(\d+)$/.exec(location.hash);
+  if (resumed) follow(resumed[1], ++run);
+</script>
+</body>
+</html>

@@ -22,6 +22,7 @@ import org.springframework.web.client.RestClientResponseException;
 public class AiClient {
 
     private final RestClient client;
+    private final RestClient progressClient;
 
     public AiClient(@Value("${faceguard.ai-server-url}") String baseUrl,
                     @Value("${faceguard.ai-timeout-seconds}") long timeoutSeconds) {
@@ -29,15 +30,21 @@ public class AiClient {
         factory.setConnectTimeout(Duration.ofSeconds(5));
         factory.setReadTimeout(Duration.ofSeconds(timeoutSeconds));   // 노이즈 계산이 오래 걸림
         this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+
+        SimpleClientHttpRequestFactory quick = new SimpleClientHttpRequestFactory();   // 진행률은 못 받아도 그만이라 짧게
+        quick.setConnectTimeout(Duration.ofSeconds(1));
+        quick.setReadTimeout(Duration.ofSeconds(2));
+        this.progressClient = RestClient.builder().baseUrl(baseUrl).requestFactory(quick).build();
     }
 
     /** 사진 파일 → 보호된 사진(PNG). 실패하면 사용자에게 보여 줄 메시지를 담은 AiException */
-    public AiResult protect(Path photo) {
+    public AiResult protect(Path photo, String progressId) {
         if (!Files.isReadable(photo)) {
             throw new AiException("저장된 사진 파일을 찾을 수 없습니다", false);
         }
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("photo", new FileSystemResource(photo));   // AI 서버의 필드 이름과 같아야 함
+        parts.add("progress_id", progressId);
         AiResult result;
         try {
             ResponseEntity<byte[]> response = client.post().uri("/protect")
@@ -67,6 +74,19 @@ public class AiClient {
             throw new AiException("AI 서버가 빈 결과를 보냈습니다", false);
         }
         return result;
+    }
+
+    /** AI 서버가 지금 몇 퍼센트인지 (0 ~ 99). 아직 시작하지 않았거나 물어볼 수 없으면 null */
+    public Integer progress(String progressId) {
+        try {
+            ProgressBody body = progressClient.get().uri("/progress/{id}", progressId).retrieve().body(ProgressBody.class);
+            return body == null ? null : body.progress();
+        } catch (RestClientException e) {
+            return null;   // 진행률을 못 받았다고 작업 조회까지 실패하면 안 됨
+        }
+    }
+
+    private record ProgressBody(Integer progress) {
     }
 
     private static boolean isReadTimeout(Throwable e) {

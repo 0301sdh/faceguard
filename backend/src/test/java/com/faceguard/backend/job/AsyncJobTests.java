@@ -41,6 +41,8 @@ class AsyncJobTests {
     static final AtomicInteger hits = new AtomicInteger();
     static final AtomicInteger running = new AtomicInteger();
     static final AtomicInteger maxRunning = new AtomicInteger();
+    static final List<String> progressAsked = new CopyOnWriteArrayList<>();
+    static volatile int progressStatus = 200;
     static final List<String> received = new CopyOnWriteArrayList<>();
 
     static {
@@ -62,6 +64,14 @@ class AsyncJobTests {
                 running.decrementAndGet();
                 exchange.close();
             }
+        });
+        ai.createContext("/progress/", exchange -> {
+            byte[] b = "{\"progress\":42}".getBytes(StandardCharsets.UTF_8);
+            progressAsked.add(exchange.getRequestURI().getPath());
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(progressStatus, b.length);
+            exchange.getResponseBody().write(b);
+            exchange.close();
         });
         ai.start();
     }
@@ -86,6 +96,8 @@ class AsyncJobTests {
         hits.set(0);
         maxRunning.set(0);
         received.clear();
+        progressAsked.clear();
+        progressStatus = 200;
         behavior = (ex, hit) -> reply(ex, 200, "PNG");
     }
 
@@ -101,6 +113,23 @@ class AsyncJobTests {
         assertThat(done.getStatus()).isEqualTo(JobStatus.DONE);
         assertThat(done.getAttempts()).isEqualTo(1);
         assertThat(Files.readString(imageService.pathOf(imageService.get(done.getProtectedImage().getId())))).isEqualTo("PNG");
+    }
+
+    @Test
+    void reportsProgressWhileProcessing() throws Exception {
+        behavior = (ex, hit) -> { Thread.sleep(700); reply(ex, 200, "PNG"); };
+        ProtectionJob job = service.create(upload("a").getId());
+        assertThat(service.progressOf(job)).isEqualTo(0);      // 대기 중
+
+        ProtectionJob processing = awaitStarted(job.getId());
+        assertThat(service.progressOf(processing)).isEqualTo(42);
+        assertThat(progressAsked).containsExactly("/progress/" + job.getId() + "-1");
+        assertThat(received.get(0)).contains("progress_id").contains(job.getId() + "-1");   // AI 서버에 보낸 이름과 같아야 함
+
+        progressStatus = 404;                                  // 진행률을 못 받아도 조회는 성공
+        assertThat(service.progressOf(processing)).isNull();
+
+        assertThat(service.progressOf(await(job.getId()))).isEqualTo(100);
     }
 
     @Test
@@ -203,6 +232,17 @@ class AsyncJobTests {
             Thread.sleep(20);
         }
         throw new AssertionError("작업이 끝나지 않음: " + id + " " + service.get(id).getStatus());
+    }
+
+    private ProtectionJob awaitStarted(Long id) throws InterruptedException {
+        for (int i = 0; i < 250; i++) {
+            ProtectionJob job = service.get(id);
+            if (job.getAttempts() == 1 && hits.get() == 1) {
+                return job;
+            }
+            Thread.sleep(20);
+        }
+        throw new AssertionError("작업이 시작되지 않음: " + id);
     }
 
     private static void reply(HttpExchange ex, int status, String body) throws IOException {

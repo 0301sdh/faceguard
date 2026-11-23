@@ -96,7 +96,7 @@ public class JobWorker implements SmartInitializingSingleton, DisposableBean {
             job.countAttempt();
             job = repository.save(job);
             try {
-                AiClient.AiResult result = aiClient.protect(imageService.pathOf(original));
+                AiClient.AiResult result = aiClient.protect(imageService.pathOf(original), job.progressId());
                 Image protectedImage = imageService.saveProtected(original, result.png());
                 job.succeed(protectedImage, result.processingSeconds());
                 repository.save(job);
