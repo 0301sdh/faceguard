@@ -25,6 +25,7 @@
 | `week9/local_speed.txt` | Mac(mps, cpu)에서 보호 코드 처리 시간과 보호 확인 | `server/try_local.py` |
 | `week9/api_test.txt` | FastAPI 서버 `POST /protect` 정상·오류 요청 시험 (Mac, Docker) | `server/app.py`, curl |
 | `week10/api_test.txt` | Spring Boot 백엔드: 업로드 → 보호 작업 → 결과 내려받기, 오류 9가지 | `backend/`, curl |
+| `week11/async_test.txt` | 비동기 작업: 응답 시간, 순서, 재시도, 강제 종료 후 이어서 하기 | `backend/` 자동 테스트, curl |
 
 - FaceNet 채점에는 무작위 요소가 없어서, 같은 합성 결과를 다시 채점하면 같은 숫자가 나온다.
 - ArcFace 점수는 Colab 노트북(`notebooks/simswap_eval.ipynb`, `notebooks/simswap_robustness.ipynb`)의 셀 출력에 남아 있다.

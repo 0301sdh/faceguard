@@ -31,8 +31,9 @@ http://127.0.0.1:8000/health 에서 `{"status":"ok"}`가 나오면 준비된 것
 
 **3. 써 보기**: 브라우저에서 http://localhost:8080/swagger-ui.html
 1. **사진** → `POST /api/images` → Try it out → 사진 선택 → Execute → 응답의 `id` 확인
-2. **보호 작업** → `POST /api/protection-jobs` → Try it out → `{"imageId": (1의 id)}` → Execute → 약 40 ~ 90초 기다림
-3. 응답의 `protectedImageUrl`(예: `/api/images/2`)을 브라우저에서 열면 보호된 사진
+2. **보호 작업** → `POST /api/protection-jobs` → Try it out → `{"imageId": (1의 id)}` → Execute → 바로 작업 번호(`id`)와 `QUEUED`가 나옴
+3. `GET /api/protection-jobs/{id}`에 작업 번호를 넣고 Execute. 40 ~ 90초 뒤 다시 누르면 `DONE`
+4. `protectedImageUrl`(예: `/api/images/2`)을 브라우저에서 열면 보호된 사진
 
 **4. 끄기**
 - Spring Boot: 그 터미널에서 `Ctrl+C`
@@ -42,12 +43,15 @@ http://127.0.0.1:8000/health 에서 `{"status":"ok"}`가 나오면 준비된 것
 | 요청 | 하는 일 |
 |---|---|
 | `POST /api/images` (form-data `file`) | 사진 올리기 → 사진 번호. JPEG, PNG, WEBP, 최대 20MB |
-| `POST /api/protection-jobs` `{"imageId": 1}` | 보호 작업. AI 처리가 끝날 때까지 기다림 (Week 11에서 비동기로 바꿀 예정) |
-| `GET /api/protection-jobs/{id}` | 작업 상태 (PROCESSING / DONE / FAILED), 실패 이유 |
+| `POST /api/protection-jobs` `{"imageId": 1}` | 보호 작업 접수(202). 작업 번호를 바로 돌려주고 뒤에서 한 장씩 처리 |
+| `GET /api/protection-jobs/{id}` | 작업 상태 (QUEUED → PROCESSING → DONE / FAILED), 실패 이유, 시도 횟수 |
 | `GET /api/images/{id}` | 사진 파일 (원본 또는 보호된 사진) |
 | `GET /api/images/{id}/info` | 사진 정보 |
 
 오류는 모두 `{"error": "메시지"}` 형태다.
+
+- AI 서버에 연결이 안 되면 최대 3번 시도한다(5초, 10초 쉬고). 얼굴이 없거나 응답이 너무 늦으면 다시 시도하지 않는다.
+- 처리 중에 서버가 꺼져도, 다시 켜면 끝내지 못한 작업을 이어서 한다.
 
 ## 저장 위치 (git에 올리지 않음)
 - 사진 파일: `backend/storage/images/`

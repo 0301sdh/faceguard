@@ -1,6 +1,6 @@
 # FaceGuard AI 서버 이미지 (CPU용)
 # 빌드: docker build -t faceguard-ai .
-# 실행: docker run --rm -p 8000:8000 -v "$PWD/models:/app/models" faceguard-ai
+# 실행: docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD/models:/app/models" faceguard-ai
 # 모델 파일(models/)은 이미지에 넣지 않고 실행할 때 연결한다 (크기 400MB, 라이선스상 배포하지 않음)
 FROM python:3.14-slim
 
